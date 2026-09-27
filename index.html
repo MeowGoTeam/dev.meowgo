@@ -4,130 +4,105 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MeowGo Dev Portal - SSO Access</title>
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script>
         tailwind.config = {
             theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'sans-serif'],
-                    },
-                    colors: {
-                        meow: {
-                            50: '#fff5f5',
-                            100: '#ffe3e3',
-                            500: '#ff4d6d',
-                            600: '#e01e5a',
-                            700: '#c7154c',
-                        }
-                    }
+                extend: { 
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: { meow: { 500: '#ff4d6d' } }
                 }
             }
         }
     </script>
+    
     <style>
         body {
-            /* Cat meme background with liquid ambient mask */
-            background-image: 
-                radial-gradient(circle at 50% 20%, rgba(30, 20, 50, 0.5) 0%, rgba(10, 8, 20, 0.88) 100%),
-                url('https://staticfanpage.akamaized.net/wp-content/uploads/sites/6/2021/07/coughing-cat-b.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            background-color: #0a0814;
         }
 
-        /* Fallback background if external image is unreachable */
-        body::before {
-            content: "";
+        /* Canvas principale per lo sfondo puro */
+        #bgCanvas {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: radial-gradient(circle at 50% 30%, rgba(255, 77, 109, 0.15), transparent 70%),
-                        radial-gradient(circle at 80% 80%, rgba(120, 80, 255, 0.12), transparent 60%);
-            z-index: -1;
-            pointer-events: none;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2;
         }
 
-        /* Apple Liquid Glass Card */
-        .liquid-glass {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(32px) saturate(200%);
-            -webkit-backdrop-filter: blur(32px) saturate(200%);
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            box-shadow: 
-                0 30px 60px -12px rgba(0, 0, 0, 0.75),
-                inset 0 1px 1px 0 rgba(255, 255, 255, 0.35),
-                inset 0 -1px 2px 0 rgba(0, 0, 0, 0.4);
-            border-radius: 28px;
-            position: relative;
-        }
-
-        /* Glossy Specular Light Reflection Overlay */
-        .liquid-glass::before {
-            content: '';
+        /* Canvas sovrapposto per l'effetto rifrazione del vetro */
+        #glassCanvas {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 45%;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.02) 100%);
-            border-radius: 28px 28px 100% 100% / 28px 28px 20px 20px;
-            pointer-events: none;
+            top: 0; left: 0;
+            border-radius: 32px;
+            z-index: -1;
+            /* Bagliore ai bordi per simulare la riflessione di Fresnel */
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.4), 
+                        0 30px 60px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            border-left: 1px solid rgba(255, 255, 255, 0.25);
         }
 
-        /* Apple Liquid Glass Input Fields */
+        /* Contenitore form allineato al canvas */
+        .glass-container {
+            position: relative;
+            z-index: 10;
+        }
+
         .glass-input {
-            background: rgba(0, 0, 0, 0.28);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: #ffffff;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            border-radius: 16px;
+            transition: all 0.3s ease;
         }
-
+        
         .glass-input:focus {
-            background: rgba(0, 0, 0, 0.45);
-            border-color: rgba(255, 77, 109, 0.8);
-            box-shadow: 0 0 0 4px rgba(255, 77, 109, 0.25), inset 0 1px 2px rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
             outline: none;
         }
-
+        
         .glass-input::placeholder {
             color: rgba(255, 255, 255, 0.4);
         }
 
-        /* Button Gloss & Hover state */
         .liquid-btn {
-            background: linear-gradient(135deg, rgba(255, 77, 109, 0.9) 0%, rgba(224, 30, 90, 0.9) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 
-                0 10px 25px -5px rgba(224, 30, 90, 0.5),
-                inset 0 1px 1px 0 rgba(255, 255, 255, 0.4);
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(255, 255, 255, 0.95);
+            color: #000000;
+            border: none;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            border-radius: 18px;
+            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-
-        .liquid-btn:hover {
-            transform: translateY(-2px) scale(1.01);
-            box-shadow: 
-                0 15px 30px -5px rgba(224, 30, 90, 0.6),
-                inset 0 1px 1px 0 rgba(255, 255, 255, 0.6);
+        
+        .liquid-btn:hover { 
+            transform: scale(1.02); 
+            background: #ffffff; 
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
         }
-
+        
         .liquid-btn:active {
-            transform: translateY(1px) scale(0.99);
+            transform: scale(0.98);
         }
 
         @keyframes subtleGlow {
-            0%, 100% { border-color: rgba(255, 77, 109, 0.5); box-shadow: 0 0 15px rgba(255, 77, 109, 0.3); }
-            50% { border-color: rgba(255, 180, 200, 0.8); box-shadow: 0 0 25px rgba(255, 77, 109, 0.6); }
+            0%, 100% { border-color: rgba(255, 255, 255, 0.3); box-shadow: 0 0 10px rgba(255, 255, 255, 0.1); }
+            50% { border-color: rgba(255, 255, 255, 0.6); box-shadow: 0 0 20px rgba(255, 255, 255, 0.3); }
         }
 
         .dev-badge-glow {
@@ -135,108 +110,184 @@
         }
     </style>
 </head>
-<body class="flex items-center justify-center p-4 font-sans text-white select-none">
+<body class="flex items-center justify-center p-4 font-sans text-white select-none min-h-screen">
 
-    <main class="w-full max-w-md relative z-10">
-        <!-- Liquid Glass Authentication Panel -->
-        <div class="liquid-glass p-8 md:p-10 relative overflow-hidden">
-            
-            <!-- Brand Header & Dev Icon -->
+    <!-- Canvas di Sfondo -->
+    <canvas id="bgCanvas"></canvas>
+
+    <main class="w-full max-w-md relative z-10 glass-container p-8 md:p-10" id="loginPanel">
+        <!-- Canvas della Goccia / Lente Rifrattiva -->
+        <canvas id="glassCanvas"></canvas>
+        
+        <div class="relative z-10">
+            <!-- Brand Header -->
             <div class="flex flex-col items-center text-center mb-8">
                 <div class="relative mb-4">
-                    <!-- Dev Logo image with liquid frame -->
-                    <div class="w-24 h-24 rounded-2xl overflow-hidden border-2 border-white/30 shadow-2xl bg-black/40 p-1 flex items-center justify-center">
-                        <img id="devLogo" src="https://i.ibb.co/6JvfGf4T/icon-192.jpg" alt="MeowGo Dev Logo" 
-                             class="w-full h-full object-cover rounded-xl"
-                             onerror="this.onerror=null; this.src='https://placehold.co/192x192/ff4d6d/ffffff?text=MeowGo';">
+                    <div class="w-24 h-24 rounded-2xl overflow-hidden border border-white/20 shadow-2xl bg-black/20 p-1 flex items-center justify-center backdrop-blur-md">
+                        <img src="https://i.ibb.co/6JvfGf4T/icon-192.jpg" class="w-full h-full object-cover rounded-xl" alt="MeowGo Dev Logo" onerror="this.onerror=null; this.src='https://placehold.co/192x192/000000/ffffff?text=MeowGo';">
                     </div>
-                    <!-- SSO Badge -->
-                    <span class="absolute -bottom-2 right-1/2 translate-x-1/2 bg-gradient-to-r from-meow-500 to-amber-500 text-[10px] font-black px-3 py-0.5 rounded-full border border-white/40 text-white tracking-widest uppercase shadow-lg whitespace-nowrap dev-badge-glow">
+                    <span class="absolute -bottom-2 right-1/2 translate-x-1/2 bg-black/60 backdrop-blur-xl text-[10px] font-black px-3 py-0.5 rounded-full border border-white/30 text-white tracking-widest uppercase shadow-lg whitespace-nowrap dev-badge-glow">
                         DEV SSO
                     </span>
                 </div>
                 
-                <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white mt-1">
-                    MeowGo Portal
-                </h1>
-                <p class="text-xs text-slate-300/80 font-medium mt-1">
-                    Accesso Riservato ai Developer (Anteprima Features)
-                </p>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white mt-1">MeowGo Portal</h1>
+                <p class="text-xs text-white/60 font-medium mt-1">Accesso Riservato ai Developer</p>
             </div>
 
-            <!-- Dynamic Feedback Toast / Alert -->
-            <div id="alertBox" class="hidden mb-6 p-4 rounded-2xl text-xs font-semibold backdrop-blur-md transition-all duration-300"></div>
+            <!-- Toast Alert -->
+            <div id="alertBox" class="hidden mb-6 p-4 rounded-xl text-xs font-semibold backdrop-blur-md transition-all duration-300"></div>
 
-            <!-- Authentication Form -->
+            <!-- Form Autenticazione -->
             <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-5">
-                
-                <!-- Email Field -->
                 <div>
-                    <label for="email" class="block text-[11px] font-bold uppercase tracking-wider text-slate-200/90 mb-1.5 ml-1">
-                        Email Developer
-                    </label>
+                    <label for="email" class="block text-[11px] font-semibold uppercase tracking-wider text-white/70 mb-1.5 ml-1">Email Developer</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/50">
                             <i class="fa-solid fa-envelope text-sm"></i>
                         </div>
-                        <input type="email" id="email" required placeholder="developer@meowgo.it" autocomplete="email"
-                            class="glass-input w-full pl-10 pr-4 py-3.5 rounded-2xl text-sm font-medium">
+                        <input type="email" id="email" required placeholder="developer@meowgo.it" autocomplete="email" class="glass-input w-full pl-10 pr-4 py-3.5 text-sm font-medium">
                     </div>
                 </div>
 
-                <!-- Password Field -->
                 <div>
-                    <label for="password" class="block text-[11px] font-bold uppercase tracking-wider text-slate-200/90 mb-1.5 ml-1">
-                        Password SSO
-                    </label>
+                    <label for="password" class="block text-[11px] font-semibold uppercase tracking-wider text-white/70 mb-1.5 ml-1">Password SSO</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/50">
                             <i class="fa-solid fa-shield-halved text-sm"></i>
                         </div>
-                        <input type="password" id="password" required placeholder="••••••••••••" autocomplete="current-password"
-                            class="glass-input w-full pl-10 pr-10 py-3.5 rounded-2xl text-sm font-medium">
-                        <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition">
+                        <input type="password" id="password" required placeholder="••••••••••••" autocomplete="current-password" class="glass-input w-full pl-10 pr-10 py-3.5 text-sm font-medium">
+                        <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-white/50 hover:text-white transition">
                             <i id="eyeIcon" class="fa-solid fa-eye text-sm"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- Submit Button -->
-                <button type="submit" id="submitBtn" 
-                    class="liquid-btn w-full py-4 px-4 text-white font-bold rounded-2xl transition duration-300 flex items-center justify-center space-x-2.5 mt-2 group">
+                <button type="submit" id="submitBtn" class="liquid-btn w-full py-4 px-4 font-semibold transition duration-300 flex items-center justify-center space-x-2.5 mt-4 group">
                     <span id="btnText" class="tracking-wide text-sm">Autenticati</span>
-                    <i id="btnIcon" class="fa-solid fa-arrow-right-to-bracket text-sm group-hover:translate-x-1 transition-transform"></i>
+                    <i id="btnIcon" class="fa-solid fa-arrow-right text-sm group-hover:translate-x-1 transition-transform"></i>
                     <i id="btnSpinner" class="fa-solid fa-circle-notch fa-spin hidden text-base"></i>
                 </button>
             </form>
 
-            <!-- Security Footer Note -->
             <div class="mt-8 pt-4 border-t border-white/10 text-center">
-                <p class="text-[11px] text-slate-300/60 font-medium">
-                    <i class="fa-solid fa-lock text-[10px] mr-1 text-emerald-400"></i>
+                <p class="text-[11px] text-white/40 font-medium">
+                    <i class="fa-solid fa-lock text-[10px] mr-1 text-white/60"></i>
                     Connessione Protetta • Hashing SHA-256
                 </p>
             </div>
         </div>
     </main>
 
+    <!-- SCRIPT 1: Effetto Rifrazione Lente (Canvas) -->
     <script>
-        /**
-         * Salted SHA-256 Digest Store
-         * No plaintext email or password exists in code.
-         * The combination is validated against cryptographic digests.
-         */
+        const bgImg = new Image();
+        // Percorso aggiornato per l'immagine in locale
+        bgImg.src = 'dev/immagini/sso/gattosso.jpg';
+
+        bgImg.onload = () => {
+            initLiquidGlass();
+            window.addEventListener('resize', initLiquidGlass);
+        };
+
+        function initLiquidGlass() {
+            const bgCanvas = document.getElementById('bgCanvas');
+            const bgCtx = bgCanvas.getContext('2d', { willReadFrequently: true });
+            const glassCanvas = document.getElementById('glassCanvas');
+            const glassCtx = glassCanvas.getContext('2d');
+            const panel = document.getElementById('loginPanel');
+
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
+            bgCanvas.width = winW;
+            bgCanvas.height = winH;
+
+            const imgRatio = bgImg.width / bgImg.height;
+            const winRatio = winW / winH;
+            let drawW = winW, drawH = winH, offsetX = 0, offsetY = 0;
+            
+            if (winRatio > imgRatio) {
+                drawH = winW / imgRatio;
+                offsetY = (winH - drawH) / 2;
+            } else {
+                drawW = winH * imgRatio;
+                offsetX = (winW - drawW) / 2;
+            }
+            
+            bgCtx.drawImage(bgImg, offsetX, offsetY, drawW, drawH);
+            
+            // Gradiente scuro di fondo
+            bgCtx.fillStyle = 'rgba(15, 10, 25, 0.4)';
+            bgCtx.fillRect(0, 0, winW, winH);
+
+            const rect = panel.getBoundingClientRect();
+            const W = Math.round(rect.width);
+            const H = Math.round(rect.height);
+            const panelX = Math.round(rect.left);
+            const panelY = Math.round(rect.top);
+
+            glassCanvas.width = W;
+            glassCanvas.height = H;
+
+            try {
+                const bgData = bgCtx.getImageData(0, 0, winW, winH);
+                const src = bgData.data;
+                const glassData = glassCtx.createImageData(W, H);
+                const dst = glassData.data;
+
+                const R = Math.min(W, H) / 2.5; 
+                const k = -0.45; 
+                const cx = W / 2;
+                const cy = H / 2;
+
+                for (let j = 0; j < H; j++) {
+                    for (let i = 0; i < W; i++) {
+                        let norm = Math.min(i, W - i, j, H - j) / R;
+                        if (norm > 1) norm = 1; 
+                        
+                        let f = 1 + k * Math.pow(1 - norm, 2);
+
+                        let sx = Math.round(cx + (i - cx) * f);
+                        let sy = Math.round(cy + (j - cy) * f);
+
+                        let globalX = panelX + sx;
+                        let globalY = panelY + sy;
+
+                        if (globalX >= 0 && globalX < winW && globalY >= 0 && globalY < winH) {
+                            let srcIdx = (globalY * winW + globalX) * 4;
+                            let dstIdx = (j * W + i) * 4;
+                            
+                            dst[dstIdx] = src[srcIdx];         
+                            dst[dstIdx+1] = src[srcIdx+1];     
+                            dst[dstIdx+2] = src[srcIdx+2];     
+                            dst[dstIdx+3] = 255;               
+                        }
+                    }
+                }
+                glassCtx.putImageData(glassData, 0, 0);
+
+                // Overlay frosted
+                glassCtx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+                glassCtx.fillRect(0, 0, W, H);
+
+            } catch (e) {
+                console.error("Errore lettura Canvas:", e);
+                glassCtx.fillStyle = 'rgba(255,255,255,0.1)';
+                glassCtx.fillRect(0, 0, W, H);
+            }
+        }
+    </script>
+
+    <!-- SCRIPT 2: Logica Autenticazione e Crypto -->
+    <script>
         const SALT = "MeowGoDevSSO2026_";
 
-        // Pre-calculated salted SHA-256 hashes for authorized accounts:
-        // Account 1: manuelmanera1171@gmail.com + Manuel257103
-        // Account 2: antoscugnizzu@gmail.com + medusa88
+        // SOSTITUISCI QUESTI HASH CON QUELLI CHE APPAIONO NELLA CONSOLE (F12)
         const AUTHORIZED_DIGESTS = [
             "3f5b7ea572e90f23824f8d5bbf0cb9724a87c126fa9c8f0f35be9ed604928eeb",
             "928f6d628cc3992ea40ddf6d8fb4852cd65882dfc706ae881771bb5d2cfd01e2"
         ];
 
-        // Compute SHA-256 hash using native Web Crypto API
         async function computeSHA256(text) {
             const encoder = new TextEncoder();
             const data = encoder.encode(text);
@@ -245,7 +296,6 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        // Toggle password input visibility
         function togglePassword() {
             const pwdInput = document.getElementById('password');
             const eyeIcon = document.getElementById('eyeIcon');
@@ -258,16 +308,15 @@
             }
         }
 
-        // Display feedback message
         function showAlert(msg, type = 'error') {
             const alertBox = document.getElementById('alertBox');
-            alertBox.classList.remove('hidden', 'bg-red-500/20', 'border-red-500/40', 'text-red-200', 'bg-emerald-500/20', 'border-emerald-500/40', 'text-emerald-200');
+            alertBox.classList.remove('hidden', 'bg-red-500/20', 'border-red-500/30', 'text-red-200', 'bg-emerald-500/20', 'border-emerald-500/30', 'text-emerald-200');
             
             if (type === 'error') {
-                alertBox.classList.add('bg-red-500/20', 'border', 'border-red-500/40', 'text-red-200');
+                alertBox.classList.add('bg-red-500/20', 'border', 'border-red-500/30', 'text-red-200');
                 alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1.5"></i> ${msg}`;
             } else {
-                alertBox.classList.add('bg-emerald-500/20', 'border', 'border-emerald-500/40', 'text-emerald-200');
+                alertBox.classList.add('bg-emerald-500/20', 'border', 'border-emerald-500/30', 'text-emerald-200');
                 alertBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1.5"></i> ${msg}`;
             }
         }
@@ -276,73 +325,53 @@
             document.getElementById('alertBox').classList.add('hidden');
         }
 
-        // Handle Login Submission
         async function handleLogin(event) {
             event.preventDefault();
             hideAlert();
 
             const emailInput = document.getElementById('email').value.trim().toLowerCase();
             const passwordInput = document.getElementById('password').value.trim();
-
             const submitBtn = document.getElementById('submitBtn');
             const btnText = document.getElementById('btnText');
             const btnIcon = document.getElementById('btnIcon');
             const btnSpinner = document.getElementById('btnSpinner');
 
-            // Button loading state
             submitBtn.disabled = true;
-            btnText.textContent = "Verifica in corso...";
+            btnText.textContent = "Verifica...";
             btnIcon.classList.add('hidden');
             btnSpinner.classList.remove('hidden');
 
             try {
-                // Compute combined salted digest
                 const combinedString = SALT + emailInput + ":" + passwordInput;
                 const computedDigest = await computeSHA256(combinedString);
+                
+                // STAMPA L'HASH DA COPIARE
+                console.warn(`[!] HASH GENERATO PER ${emailInput}:`);
+                console.warn(computedDigest);
 
                 setTimeout(() => {
                     if (AUTHORIZED_DIGESTS.includes(computedDigest)) {
-                        showAlert('Autenticato con successo! Reindirizzamento a dev/index.html...', 'success');
-
-                        // Set session indicator for dev/index.html authorization
+                        showAlert('Autenticato! Reindirizzamento...', 'success');
                         sessionStorage.setItem('meowgo_sso_authenticated', 'true');
-                        sessionStorage.setItem('meowgo_sso_timestamp', Date.now().toString());
-
-                        // Perform redirection
-                        setTimeout(() => {
-                            window.location.href = 'dev/index.html';
-                        }, 800);
-
+                        setTimeout(() => { window.location.href = 'dev/index.html'; }, 800);
                     } else {
-                        // Reset button UI on error
                         submitBtn.disabled = false;
                         btnText.textContent = "Autenticati";
                         btnIcon.classList.remove('hidden');
                         btnSpinner.classList.add('hidden');
-
-                        showAlert('Credenziali errate o account non autorizzato.');
+                        showAlert('Credenziali errate. Copia il nuovo Hash dalla console!');
                     }
                 }, 400);
 
             } catch (err) {
-                console.error("Crypto execution error:", err);
+                console.error("Crypto error:", err);
                 submitBtn.disabled = false;
                 btnText.textContent = "Autenticati";
                 btnIcon.classList.remove('hidden');
                 btnSpinner.classList.add('hidden');
-                showAlert('Si è verificato un errore durante la verifica crittografica.');
+                showAlert('Errore API. Assicurati di usare un Server Locale o HTTPS.');
             }
         }
-
-        // Auto-redirect if session is already active in current browser window
-        window.addEventListener('DOMContentLoaded', () => {
-            if (sessionStorage.getItem('meowgo_sso_authenticated') === 'true') {
-                showAlert('Sessione SSO attiva. Reindirizzamento...', 'success');
-                setTimeout(() => {
-                    window.location.href = 'dev/index.html';
-                }, 800);
-            }
-        });
     </script>
 </body>
 </html>
