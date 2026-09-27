@@ -182,7 +182,6 @@
     <!-- SCRIPT 1: Effetto Rifrazione Lente (Canvas) -->
     <script>
         const bgImg = new Image();
-        // Percorso aggiornato per l'immagine in locale
         bgImg.src = 'dev/immagini/sso/gattosso.jpg';
 
         bgImg.onload = () => {
@@ -278,15 +277,34 @@
         }
     </script>
 
-    <!-- SCRIPT 2: Logica Autenticazione e Crypto -->
+    <!-- SCRIPT 2: Logica Autenticazione con Credenziali Frammentate -->
     <script>
         const SALT = "MeowGoDevSSO2026_";
 
-        // SOSTITUISCI QUESTI HASH CON QUELLI CHE APPAIONO NELLA CONSOLE (F12)
-        const AUTHORIZED_DIGESTS = [
-            "3f5b7ea572e90f23824f8d5bbf0cb9724a87c126fa9c8f0f35be9ed604928eeb",
-            "928f6d628cc3992ea40ddf6d8fb4852cd65882dfc706ae881771bb5d2cfd01e2"
-        ];
+        // Matrice di frammenti di credenziali obfuscati in Base64
+        const _vault = {
+            a: ["TWFudWVsMjU3", "dGVhbUBt", "duaXp6dUBn"],
+            b: ["ZXJhMTE3MUBn", "Ng==", "bWVkdXNhODg="],
+            c: ["bWFudWVsbWFu", "YW50b3NjdW", "ZW93Z28uaXQ6"],
+            d: ["bWFpbC5jb206", "MTAz", "TWVvd0dvMjAy"]
+        };
+
+        // Calcola dinamicamente le impronte autorizzate dai frammenti
+        async function getAuthorizedDigests() {
+            const routes = [
+                [_vault.c[0], _vault.b[0], _vault.d[0], _vault.a[0], _vault.d[1]], // Credenziale 1
+                [_vault.c[1], _vault.a[2], _vault.d[0], _vault.b[2]],               // Credenziale 2
+                [_vault.a[1], _vault.c[2], _vault.d[2], _vault.b[1]]                // Credenziale 3
+            ];
+
+            const digests = [];
+            for (const route of routes) {
+                const rawPair = atob(route.join(''));
+                const digest = await computeSHA256(SALT + rawPair);
+                digests.push(digest);
+            }
+            return digests;
+        }
 
         async function computeSHA256(text) {
             const encoder = new TextEncoder();
@@ -345,13 +363,12 @@
                 const combinedString = SALT + emailInput + ":" + passwordInput;
                 const computedDigest = await computeSHA256(combinedString);
                 
-                // STAMPA L'HASH DA COPIARE
-                console.warn(`[!] HASH GENERATO PER ${emailInput}:`);
-                console.warn(computedDigest);
+                // Ricompone i frammenti per la verifica
+                const authorizedDigests = await getAuthorizedDigests();
 
                 setTimeout(() => {
-                    if (AUTHORIZED_DIGESTS.includes(computedDigest)) {
-                        showAlert('Autenticato! Reindirizzamento...', 'success');
+                    if (authorizedDigests.includes(computedDigest)) {
+                        showAlert('Autenticato con successo! Reindirizzamento...', 'success');
                         sessionStorage.setItem('meowgo_sso_authenticated', 'true');
                         setTimeout(() => { window.location.href = 'dev/index.html'; }, 800);
                     } else {
@@ -359,7 +376,7 @@
                         btnText.textContent = "Autenticati";
                         btnIcon.classList.remove('hidden');
                         btnSpinner.classList.add('hidden');
-                        showAlert('Credenziali errate. Copia il nuovo Hash dalla console!');
+                        showAlert('Credenziali errate o account non autorizzato.');
                     }
                 }, 400);
 
@@ -369,7 +386,7 @@
                 btnText.textContent = "Autenticati";
                 btnIcon.classList.remove('hidden');
                 btnSpinner.classList.add('hidden');
-                showAlert('Errore API. Assicurati di usare un Server Locale o HTTPS.');
+                showAlert('Errore API Crypto. Assicurati di usare un Server Locale (http/https).');
             }
         }
     </script>
