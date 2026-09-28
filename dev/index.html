@@ -1,9 +1,461 @@
-<DOCTYPE! html>
-  <html>
-    <head>
-      <title>Meowgo Developer</title>
-    </head>
-    <body>
-      <h1>MeowGo Developer page</h1>
-    </body>
-  </html>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MeowGo Dev Portal</title>
+
+  <!-- Controllo di sicurezza SSO (se non autenticato torna alla root index.html) -->
+  <script>
+    if (sessionStorage.getItem('meowgo_sso_authenticated') !== 'true') {
+      window.location.href = '../index.html';
+    }
+  </script>
+
+  <!-- FontAwesome e Google Fonts per lo stile MeowGo -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-color: #f7f0ea;            /* Sfondo chiaro caldo tipo MeowGo */
+      --card-bg: #ffffff;
+      --primary-orange: #d96b27;      /* Arancione MeowGo */
+      --primary-light: #fdf6f0;
+      --text-dark: #3a2e2b;
+      --text-muted: #8c7b75;
+      --border-radius: 20px;
+      --border-color: #f0e2d8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-dark);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Topbar Header */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 65px;
+      background-color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border-color);
+      z-index: 900;
+    }
+
+    .brand-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      color: var(--primary-orange);
+      font-size: 1.5rem;
+    }
+
+    .brand-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--text-dark);
+    }
+
+    .hamburger-btn {
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      color: var(--text-dark);
+      cursor: pointer;
+    }
+
+    /* Sidebar con stile carte e angoli smussati */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -280px;
+      width: 280px;
+      height: 100%;
+      background-color: #ffffff;
+      transition: left 0.3s ease;
+      border-right: 1px solid var(--border-color);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar.open {
+      left: 0;
+    }
+
+    .sidebar-header {
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar-header h3 {
+      color: var(--primary-orange);
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.3rem;
+      cursor: pointer;
+    }
+
+    /* Card Profilo Utente Stile MeowGo */
+    .user-profile-card {
+      margin: 15px;
+      padding: 15px;
+      background-color: var(--primary-light);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background-color: #fff;
+      border: 2px solid var(--primary-orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-orange);
+      font-weight: 800;
+      font-size: 1.2rem;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .user-name {
+      color: var(--text-dark);
+      font-weight: 700;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-badge {
+      display: inline-block;
+      background: var(--primary-orange);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-top: 2px;
+      width: fit-content;
+      text-transform: uppercase;
+    }
+
+    /* Menu di navigazione */
+    .nav-menu {
+      list-style: none;
+      padding: 10px 15px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      color: var(--text-dark);
+      text-decoration: none;
+      gap: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 14px;
+      background-color: var(--primary-light);
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      background-color: #fff;
+      border-color: var(--primary-orange);
+      color: var(--primary-orange);
+      box-shadow: 0 4px 12px rgba(217, 107, 39, 0.08);
+    }
+
+    .nav-link i {
+      width: 22px;
+      text-align: center;
+      font-size: 1.1rem;
+      color: var(--primary-orange);
+    }
+
+    /* Tasto Logout in fondo */
+    .logout-container {
+      padding: 15px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .btn-logout {
+      width: 100%;
+      padding: 12px;
+      background-color: #fde8e8;
+      color: #e53e3e;
+      border: 1px solid #f8b4b4;
+      border-radius: 14px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-logout:hover {
+      background-color: #fbd5d5;
+    }
+
+    /* Main Container (Iframe) */
+    .main-content {
+      margin-top: 65px;
+      width: 100%;
+      height: calc(100vh - 65px);
+      transition: margin-left 0.3s ease;
+    }
+
+    #contentFrame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background-color: var(--bg-color);
+    }
+
+    /* Overlay Mobile */
+    .overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(2px);
+      display: none;
+      z-index: 999;
+    }
+
+    .overlay.active {
+      display: block;
+    }
+
+    /* Desktop View */
+    @media (min-width: 992px) {
+      .sidebar {
+        left: 0;
+      }
+      .topbar {
+        left: 280px;
+        width: calc(100% - 280px);
+      }
+      .hamburger-btn, .close-btn {
+        display: none;
+      }
+      .main-content {
+        margin-left: 280px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Topbar Header -->
+  <header class="topbar">
+    <div class="brand-container">
+      <i class="fa-solid fa-cat brand-icon"></i>
+      <span class="brand-title">MeowGo</span>
+    </div>
+    
+    <button class="hamburger-btn" id="toggleSidebar">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+  </header>
+
+  <!-- Overlay sfondo mobile -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- Sidebar a Sinistra -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h3><i class="fa-solid fa-code"></i> Dev Portal</h3>
+      <button class="close-btn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Profilo Utente Loggato -->
+    <div class="user-profile-card">
+      <div class="user-avatar" id="userAvatar">
+        <i class="fa-solid fa-cat"></i>
+      </div>
+      <div class="user-info">
+        <span class="user-name" id="userName">Developer</span>
+        <span class="user-badge" id="userRole">DEV ACCOUNT</span>
+      </div>
+    </div>
+
+    <!-- Collegamenti della Sidebar -->
+    <ul class="nav-menu">
+      <li class="nav-item">
+        <a href="sidebar/gestione/gestione.html" target="contentFrame" class="nav-link active">
+          <i class="fa-solid fa-sliders"></i>
+          <span>Gestione</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="sidebar/moderazione/moderazione.html" target="contentFrame" class="nav-link">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Moderazione</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="sidebar/notifiche/notifiche.html" target="contentFrame" class="nav-link">
+          <i class="fa-solid fa-bell"></i>
+          <span>Notifiche</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="sidebar/utenti/utenti.html" target="contentFrame" class="nav-link">
+          <i class="fa-solid fa-users"></i>
+          <span>Utenti</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="sidebar/beta/beta.html" target="contentFrame" class="nav-link">
+          <i class="fa-solid fa-vial"></i>
+          <span>Beta</span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- Logout -->
+    <div class="logout-container">
+      <button class="btn-logout" id="logoutBtn">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Area ContenutoPrincipale (Iframe) -->
+  <main class="main-content">
+    <iframe name="contentFrame" id="contentFrame" src="sidebar/gestione/gestione.html"></iframe>
+  </main>
+
+  <!-- Integration Firebase Realtime DB per leggere i profili -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "TUA_API_KEY",
+      authDomain: "meowgo-db.firebaseapp.com",
+      databaseURL: "https://meowgo-db-default-rtdb.firebaseio.com",
+      projectId: "meowgo-db",
+      storageBucket: "meowgo-db.appspot.com",
+      messagingSenderId: "XXXXXX",
+      appId: "XXXXXX"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    // Lettura del profilo utente da Realtime DB
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const snapshot = await get(child(ref(db), `utenti/${user.uid}`));
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            document.getElementById('userName').textContent = data.username || data.nome || user.displayName;
+            
+            if (data.photoURL || data.avatar) {
+              document.getElementById('userAvatar').innerHTML = `<img src="${data.photoURL || data.avatar}" alt="Avatar">`;
+            }
+          }
+        } catch (e) {
+          console.log("Lettura Realtime DB opzionale:", e);
+        }
+      }
+    });
+
+    // Azione Logout SSO
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      sessionStorage.removeItem('meowgo_sso_authenticated');
+      window.location.href = '../index.html'; // Ritorna all'SSO nella root
+    });
+  </script>
+
+  <!-- Gestione Interfaccia Navigazione e Menu Panino -->
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const toggleBtn = document.getElementById('toggleSidebar');
+    const closeBtn = document.getElementById('closeSidebar');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    function toggleSidebar() {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('active');
+    }
+
+    toggleBtn.addEventListener('click', toggleSidebar);
+    closeBtn.addEventListener('click', toggleSidebar);
+    overlay.addEventListener('click', toggleSidebar);
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+
+        if (window.innerWidth < 992) {
+          toggleSidebar();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
