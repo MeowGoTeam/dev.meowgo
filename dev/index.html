@@ -4,97 +4,201 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MeowGo Dev Dashboard</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: { 
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: { meow: { 500: '#ff4d6d' } }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            margin: 0;
+            background-color: #0a0814;
+            color: #ffffff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        }
+
+        .liquid-btn {
+            background: rgba(255, 255, 255, 0.95);
+            color: #000000;
+            border: none;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            transition: all 0.25s ease;
+        }
+        
+        .liquid-btn:hover { 
+            transform: scale(1.02); 
+            background: #ffffff; 
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+        }
+    </style>
 </head>
-<body class="bg-[#0a0814] text-white min-h-screen flex">
+<body class="min-h-screen flex flex-col p-4 md:p-8 select-none">
 
-    <!-- Sidebar / Navigazione pagine -->
-    <aside class="w-64 bg-white/5 backdrop-blur-2xl border-r border-white/10 p-6 flex flex-col justify-between">
-        <div>
-            <div class="flex items-center space-x-3 mb-10">
-                <img id="userAvatar" src="" class="w-12 h-12 rounded-xl object-cover border border-white/20">
-                <div>
-                    <h2 id="userName" class="font-bold text-sm">Caricamento...</h2>
-                    <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Online Developer</span>
-                </div>
+    <!-- Header / Profilo Sincronizzato -->
+    <header class="w-full max-w-4xl mx-auto glass-card p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center space-x-4">
+            <div class="relative">
+                <img id="userAvatar" src="https://placehold.co/192x192/000000/ffffff?text=Dev" class="w-16 h-16 rounded-2xl object-cover border-2 border-white/20 shadow-xl" alt="Profilo Developer">
+                <span class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-[#0a0814] rounded-full"></span>
             </div>
-
-            <nav class="space-y-2">
-                <a href="#" onclick="loadPage('dev/notifiche.html')" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-white/10 text-sm font-medium transition">
-                    <i class="fa-solid fa-bell text-rose-400"></i>
-                    <span>Notifiche</span>
-                </a>
-                <a href="#" onclick="loadPage('dev/features.html')" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-white/10 text-sm font-medium transition">
-                    <i class="fa-solid fa-code text-indigo-400"></i>
-                    <span>Features Preview</span>
-                </a>
-                <a href="#" onclick="loadPage('dev/admin.html')" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-white/10 text-sm font-medium transition">
-                    <i class="fa-solid fa-database text-amber-400"></i>
-                    <span>Admin</span>
-                </a>
-            </nav>
+            <div>
+                <span class="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">Sessione Attiva</span>
+                <h1 id="userName" class="text-xl font-extrabold text-white mt-1">Caricamento in corso...</h1>
+                <p id="userEmail" class="text-xs text-white/50 font-medium">Verifica credenziali Firebase...</p>
+            </div>
         </div>
 
-        <button onclick="logout()" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-200 text-sm font-medium transition">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            <span>Disconnettiti</span>
-        </button>
-    </aside>
-
-    <!-- Area Principale dei Contenuti -->
-    <main class="flex-1 p-10 overflow-y-auto">
-        <header class="mb-8 flex justify-between items-center border-b border-white/10 pb-4">
-            <h1 class="text-2xl font-extrabold tracking-tight">MeowGo Dashboard</h1>
-            <span class="text-xs text-white/50">Ambiente di Sviluppo Protetto</span>
-        </header>
-
-        <!-- Contenuto Dinamico Caricato dalla cartella /sidebar/ -->
-        <div id="contentArea" class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl min-h-[400px]">
-            <h2 class="text-lg font-bold mb-2">Benvenuto nel pannello di controllo</h2>
-            <p class="text-sm text-white/60">Seleziona una voce dalla barra laterale per caricare la pagina corrispondente dalla cartella <code class="bg-black/30 px-2 py-1 rounded text-rose-300">/sidebar/</code>.</p>
+        <div class="flex items-center gap-3">
+            <a href="../index.html" class="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold transition flex items-center gap-2">
+                <i class="fa-solid fa-house text-pink-400"></i> App Home
+            </a>
+            <button onclick="logout()" class="px-4 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-xs font-semibold text-red-300 transition flex items-center gap-2">
+                <i class="fa-solid fa-power-off"></i> Esci
+            </button>
         </div>
+    </header>
+
+    <!-- Griglia Principale dei Pulsanti e Collegamenti -->
+    <main class="w-full max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 flex-1">
+        
+        <!-- Collegamento 1: Admin (/sidebar/dev/admin) -->
+        <a href="/sidebar/dev/admin.html" class="glass-card p-6 flex flex-col justify-between group">
+            <div class="flex items-start justify-between mb-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border border-white/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition">
+                    <i class="fa-solid fa-user-shield text-lg"></i>
+                </div>
+                <span class="text-[10px] font-mono bg-white/5 px-2.5 py-1 rounded-lg text-white/40 border border-white/5">/sidebar/dev/admin</span>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-white group-hover:text-purple-300 transition">Pannello Admin</h3>
+                <p class="text-xs text-white/50 mt-1 leading-relaxed">Gestione avanzata degli accessi, configurazioni di sistema e privilegi dei developer.</p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-white/5 flex items-center justify-between text-xs font-semibold text-purple-400">
+                <span>Accedi alla funzione</span>
+                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+            </div>
+        </a>
+
+        <!-- Collegamento 2: Preview (/sidebar/dev/preview) -->
+        <a href="/sidebar/dev/preview.html" class="glass-card p-6 flex flex-col justify-between group">
+            <div class="flex items-start justify-between mb-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-white/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition">
+                    <i class="fa-solid fa-eye text-lg"></i>
+                </div>
+                <span class="text-[10px] font-mono bg-white/5 px-2.5 py-1 rounded-lg text-white/40 border border-white/5">/sidebar/dev/preview</span>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-white group-hover:text-cyan-300 transition">Preview & Test UI</h3>
+                <p class="text-xs text-white/50 mt-1 leading-relaxed">Anteprima interattiva dei componenti grafici, animazioni Liquid Glass e layout PWA.</p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-white/5 flex items-center justify-between text-xs font-semibold text-cyan-400">
+                <span>Accedi alla funzione</span>
+                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+            </div>
+        </a>
+
+        <!-- Collegamento 3: Notifiche -->
+        <a href="/sidebar/notifiche.html" class="glass-card p-6 flex flex-col justify-between group">
+            <div class="flex items-start justify-between mb-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500/20 to-rose-500/20 border border-white/10 flex items-center justify-center text-pink-400 group-hover:scale-110 transition">
+                    <i class="fa-solid fa-bell text-lg"></i>
+                </div>
+                <span class="text-[10px] font-mono bg-white/5 px-2.5 py-1 rounded-lg text-white/40 border border-white/5">/sidebar/notifiche</span>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-white group-hover:text-pink-300 transition">Centro Notifiche</h3>
+                <p class="text-xs text-white/50 mt-1 leading-relaxed">Gestione dei log di sistema, avvisi push e notifiche di sincronizzazione Firebase.</p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-white/5 flex items-center justify-between text-xs font-semibold text-pink-400">
+                <span>Accedi alla funzione</span>
+                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+            </div>
+        </a>
+
+        <!-- Collegamento 4: Database Console -->
+        <a href="/sidebar/database.html" class="glass-card p-6 flex flex-col justify-between group">
+            <div class="flex items-start justify-between mb-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-white/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition">
+                    <i class="fa-solid fa-database text-lg"></i>
+                </div>
+                <span class="text-[10px] font-mono bg-white/5 px-2.5 py-1 rounded-lg text-white/40 border border-white/5">/sidebar/database</span>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-white group-hover:text-amber-300 transition">Realtime Database</h3>
+                <p class="text-xs text-white/50 mt-1 leading-relaxed">Monitoraggio in tempo reale delle sessioni attive e dello stato dei nodi database.</p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-white/5 flex items-center justify-between text-xs font-semibold text-amber-400">
+                <span>Accedi alla funzione</span>
+                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+            </div>
+        </a>
+
     </main>
 
+    <!-- Footer -->
+    <footer class="w-full max-w-4xl mx-auto text-center mt-8 py-4 text-[11px] text-white/30 border-t border-white/5">
+        MeowGo Developer Environment &bull; Firebase Synchronized
+    </footer>
+
+    <!-- Script Sincronizzazione Utente -->
     <script>
-        // Caricamento profilo utente da localStorage / sessione
         window.addEventListener('DOMContentLoaded', () => {
-            const userData = JSON.parse(localStorage.getItem('meowgo_sso_user'));
-            if (!userData) {
-                window.location.href = '../index.html'; // Ritorna al login se non autenticato
+            const savedUser = localStorage.getItem('meowgo_sso_user');
+            if (!savedUser) {
+                // Se non è loggato, reindirizza alla pagina di login principale
+                window.location.href = '../index.html'; 
                 return;
             }
 
-            document.getElementById('userName').textContent = userData.name;
-            document.getElementById('userAvatar').src = userData.avatar;
+            try {
+                const user = JSON.parse(savedUser);
+                document.getElementById('userName').textContent = user.name;
+                document.getElementById('userEmail').textContent = user.email;
+                if (user.avatar) {
+                    document.getElementById('userAvatar').src = user.avatar;
+                }
+            } catch (e) {
+                console.error("Errore lettura dati utente:", e);
+                window.location.href = '../index.html';
+            }
         });
 
-        // Funzione per caricare le pagine della cartella /sidebar/ dinamicamente
-        function loadPage(pageName) {
-            const contentArea = document.getElementById('contentArea');
-            contentArea.innerHTML = `<div class="flex justify-center items-center py-20"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-rose-500"></i></div>`;
-            
-            fetch(`sidebar/${pageName}`)
-                .then(response => {
-                    if (!response.ok) throw new Error("Pagina non trovata");
-                    return response.text();
-                })
-                .then(html => {
-                    contentArea.innerHTML = html;
-                })
-                .catch(err => {
-                    contentArea.innerHTML = `
-                        <div class="text-center py-10">
-                            <i class="fa-solid fa-triangle-exclamation text-3xl text-amber-400 mb-3"></i>
-                            <h3 class="font-bold text-base">Modulo non ancora disponibile</h3>
-                            <p class="text-xs text-white/60 mt-1">Crea il file <code class="text-rose-300">/sidebar/${pageName}</code> per visualizzarlo qui.</p>
-                        </div>`;
-                });
-        }
-
-        function logout() {
+        window.logout = function() {
             localStorage.removeItem('meowgo_sso_user');
-            window.location.href = '../meowgo_dev_portal_sso_login.html';
+            window.location.href = '../index.html';
         }
     </script>
 </body>
