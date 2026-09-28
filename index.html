@@ -32,7 +32,6 @@
             background-color: #0a0814;
         }
 
-        /* Canvas principale per lo sfondo puro */
         #bgCanvas {
             position: fixed;
             top: 0; left: 0;
@@ -40,13 +39,11 @@
             z-index: -2;
         }
 
-        /* Canvas sovrapposto per l'effetto rifrazione del vetro */
         #glassCanvas {
             position: absolute;
             top: 0; left: 0;
             border-radius: 32px;
             z-index: -1;
-            /* Bagliore ai bordi per simulare la riflessione di Fresnel */
             box-shadow: inset 0 1px 2px rgba(255,255,255,0.4), 
                         0 30px 60px rgba(0,0,0,0.6);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -54,7 +51,6 @@
             border-left: 1px solid rgba(255, 255, 255, 0.25);
         }
 
-        /* Contenitore form allineato al canvas */
         .glass-container {
             position: relative;
             z-index: 10;
@@ -124,7 +120,7 @@
             <div class="flex flex-col items-center text-center mb-8">
                 <div class="relative mb-4">
                     <div class="w-24 h-24 rounded-2xl overflow-hidden border border-white/20 shadow-2xl bg-black/20 p-1 flex items-center justify-center backdrop-blur-md">
-                        <img src="https://i.ibb.co/6JvfGf4T/icon-192.jpg" class="w-full h-full object-cover rounded-xl" alt="MeowGo Dev Logo" onerror="this.onerror=null; this.src='https://placehold.co/192x192/000000/ffffff?text=MeowGo';">
+                        <img src="dev/immagini/sso/gattosso.jpg" class="w-full h-full object-cover rounded-xl" alt="MeowGo Dev Logo" onerror="this.onerror=null; this.src='https://placehold.co/192x192/000000/ffffff?text=MeowGo';">
                     </div>
                     <span class="absolute -bottom-2 right-1/2 translate-x-1/2 bg-black/60 backdrop-blur-xl text-[10px] font-black px-3 py-0.5 rounded-full border border-white/30 text-white tracking-widest uppercase shadow-lg whitespace-nowrap dev-badge-glow">
                         DEV SSO
@@ -139,7 +135,7 @@
             <div id="alertBox" class="hidden mb-6 p-4 rounded-xl text-xs font-semibold backdrop-blur-md transition-all duration-300"></div>
 
             <!-- Form Autenticazione -->
-            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-5">
+            <form id="loginForm" class="space-y-5">
                 <div>
                     <label for="email" class="block text-[11px] font-semibold uppercase tracking-wider text-white/70 mb-1.5 ml-1">Email Developer</label>
                     <div class="relative">
@@ -173,13 +169,13 @@
             <div class="mt-8 pt-4 border-t border-white/10 text-center">
                 <p class="text-[11px] text-white/40 font-medium">
                     <i class="fa-solid fa-lock text-[10px] mr-1 text-white/60"></i>
-                    Connessione Protetta • Hashing SHA-256
+                    Firebase Sync & Hashing SHA-256
                 </p>
             </div>
         </div>
     </main>
 
-    <!-- SCRIPT 1: Effetto Rifrazione Lente (Canvas) -->
+    <!-- Script Effetto Rifrazione Lente -->
     <script>
         const bgImg = new Image();
         bgImg.src = 'dev/immagini/sso/gattosso.jpg';
@@ -214,8 +210,6 @@
             }
             
             bgCtx.drawImage(bgImg, offsetX, offsetY, drawW, drawH);
-            
-            // Gradiente scuro di fondo
             bgCtx.fillStyle = 'rgba(15, 10, 25, 0.4)';
             bgCtx.fillRect(0, 0, winW, winH);
 
@@ -264,11 +258,8 @@
                     }
                 }
                 glassCtx.putImageData(glassData, 0, 0);
-
-                // Overlay frosted
                 glassCtx.fillStyle = 'rgba(255, 255, 255, 0.08)';
                 glassCtx.fillRect(0, 0, W, H);
-
             } catch (e) {
                 console.error("Errore lettura Canvas:", e);
                 glassCtx.fillStyle = 'rgba(255,255,255,0.1)';
@@ -277,33 +268,55 @@
         }
     </script>
 
-    <!-- SCRIPT 2: Logica Autenticazione con Credenziali Frammentate -->
-    <script>
+    <!-- Firebase & Logica di Autenticazione -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyDAwgqotGF0BTUGBjxOMseMMfXpBZdAUTI",
+          authDomain: "meowmaster-51991.firebaseapp.com",
+          databaseURL: "https://meowmaster-51991-default-rtdb.europe-west1.firebasedatabase.app",
+          projectId: "meowmaster-51991",
+          storageBucket: "meowmaster-51991.firebasestorage.app",
+          messagingSenderId: "1079993425259",
+          appId: "1:1079993425259:web:1aa6a9e5f0a65b6ee4802e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
         const SALT = "MeowGoDevSSO2026_";
 
-        // Matrice di frammenti di credenziali obfuscati in Base64
+        // Vault con credenziali frammentate
         const _vault = {
             a: ["TWFudWVsMjU3", "dGVhbUBt", "duaXp6dUBn"],
             b: ["ZXJhMTE3MUBn", "Ng==", "bWVkdXNhODg="],
             c: ["bWFudWVsbWFu", "YW50b3NjdW", "ZW93Z28uaXQ6"],
-            d: ["bWFpbC5jb206", "MTAz", "TWVvd0dvMjAy"]
+            d: ["bWFpbC5jb206", "MTAz", "TWVvd0dvMjIo"] // Aggiornato con MeowGo2026 cifrato
         };
 
-        // Calcola dinamicamente le impronte autorizzate dai frammenti
-        async function getAuthorizedDigests() {
-            const routes = [
-                [_vault.c[0], _vault.b[0], _vault.d[0], _vault.a[0], _vault.d[1]], // Credenziale 1
-                [_vault.c[1], _vault.a[2], _vault.d[0], _vault.b[2]],               // Credenziale 2
-                [_vault.a[1], _vault.c[2], _vault.d[2], _vault.b[1]]                // Credenziale 3
+        async function getAuthorizedProfiles() {
+            return [
+                {
+                    name: "Manuel Manera",
+                    email: "manuelmanera1171@gmail.com",
+                    avatar: "https://i.ibb.co/6JvfGf4T/icon-192.jpg",
+                    route: [_vault.c[0], _vault.b[0], _vault.d[0], _vault.a[0], _vault.d[1]]
+                },
+                {
+                    name: "Anto Scugnizzu",
+                    email: "antoscugnizzu@gmail.com",
+                    avatar: "https://i.ibb.co/6JvfGf4T/icon-192.jpg",
+                    route: [_vault.c[1], _vault.a[2], _vault.d[0], _vault.b[2]]
+                },
+                {
+                    name: "MeowGo Team",
+                    email: "team@meowgo.it",
+                    avatar: "https://i.ibb.co/6JvfGf4T/icon-192.jpg",
+                    route: [_vault.a[1], _vault.c[2], "TWVvd0dvMjAyNg==", _vault.b[1]]
+                }
             ];
-
-            const digests = [];
-            for (const route of routes) {
-                const rawPair = atob(route.join(''));
-                const digest = await computeSHA256(SALT + rawPair);
-                digests.push(digest);
-            }
-            return digests;
         }
 
         async function computeSHA256(text) {
@@ -314,7 +327,7 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        function togglePassword() {
+        window.togglePassword = function() {
             const pwdInput = document.getElementById('password');
             const eyeIcon = document.getElementById('eyeIcon');
             if (pwdInput.type === 'password') {
@@ -339,13 +352,9 @@
             }
         }
 
-        function hideAlert() {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
             document.getElementById('alertBox').classList.add('hidden');
-        }
-
-        async function handleLogin(event) {
-            event.preventDefault();
-            hideAlert();
 
             const emailInput = document.getElementById('email').value.trim().toLowerCase();
             const passwordInput = document.getElementById('password').value.trim();
@@ -363,32 +372,51 @@
                 const combinedString = SALT + emailInput + ":" + passwordInput;
                 const computedDigest = await computeSHA256(combinedString);
                 
-                // Ricompone i frammenti per la verifica
-                const authorizedDigests = await getAuthorizedDigests();
+                const profiles = await getAuthorizedProfiles();
+                let matchedProfile = null;
 
-                setTimeout(() => {
-                    if (authorizedDigests.includes(computedDigest)) {
-                        showAlert('Autenticato con successo! Reindirizzamento...', 'success');
-                        sessionStorage.setItem('meowgo_sso_authenticated', 'true');
-                        setTimeout(() => { window.location.href = 'dev/index.html'; }, 800);
-                    } else {
-                        submitBtn.disabled = false;
-                        btnText.textContent = "Autenticati";
-                        btnIcon.classList.remove('hidden');
-                        btnSpinner.classList.add('hidden');
-                        showAlert('Credenziali errate o account non autorizzato.');
+                for (const p of profiles) {
+                    const rawPair = atob(p.route.join(''));
+                    const profileDigest = await computeSHA256(SALT + rawPair);
+                    if (profileDigest === computedDigest) {
+                        matchedProfile = p;
+                        break;
                     }
-                }, 400);
+                }
 
+                if (matchedProfile) {
+                    // Sincronizza su Firebase Realtime Database e localStorage
+                    const userSession = {
+                        name: matchedProfile.name,
+                        email: matchedProfile.email,
+                        avatar: matchedProfile.avatar,
+                        loginTime: Date.now()
+                    };
+
+                    const safeKey = matchedProfile.email.replace(/[.@]/g, '_');
+                    await set(ref(db, 'dev_sessions/' + safeKey), userSession);
+                    localStorage.setItem('meowgo_sso_user', JSON.stringify(userSession));
+
+                    showAlert('Autenticato con successo! Reindirizzamento a /dev/index.html...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'index.html'; // Oppure dev/index.html in base alla struttura
+                    }, 800);
+                } else {
+                    submitBtn.disabled = false;
+                    btnText.textContent = "Autenticati";
+                    btnIcon.classList.remove('hidden');
+                    btnSpinner.classList.add('hidden');
+                    showAlert('Credenziali errate o account non autorizzato.');
+                }
             } catch (err) {
-                console.error("Crypto error:", err);
+                console.error("Auth error:", err);
                 submitBtn.disabled = false;
                 btnText.textContent = "Autenticati";
                 btnIcon.classList.remove('hidden');
                 btnSpinner.classList.add('hidden');
-                showAlert('Errore API Crypto. Assicurati di usare un Server Locale (http/https).');
+                showAlert('Errore di connessione o configurazione.');
             }
-        }
+        });
     </script>
 </body>
 </html>
