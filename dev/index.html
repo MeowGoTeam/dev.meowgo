@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MeowGo Dev Portal</title>
 
-  <!-- Controllo di sicurezza SSO (se non autenticato torna alla root index.html) -->
+  <!-- Controllo di sicurezza SSO -->
   <script>
     if (sessionStorage.getItem('meowgo_sso_authenticated') !== 'true') {
       window.location.href = '../index.html';
@@ -18,9 +18,9 @@
 
   <style>
     :root {
-      --bg-color: #f7f0ea;            /* Sfondo chiaro caldo tipo MeowGo */
+      --bg-color: #f7f0ea;
       --card-bg: #ffffff;
-      --primary-orange: #d96b27;      /* Arancione MeowGo */
+      --primary-orange: #d96b27;
       --primary-light: #fdf6f0;
       --text-dark: #3a2e2b;
       --text-muted: #8c7b75;
@@ -84,7 +84,7 @@
       cursor: pointer;
     }
 
-    /* Sidebar con stile carte e angoli smussati */
+    /* Sidebar */
     .sidebar {
       position: fixed;
       top: 0;
@@ -125,7 +125,7 @@
       cursor: pointer;
     }
 
-    /* Card Profilo Utente Stile MeowGo */
+    /* Card Profilo Utente Sincronizzata con Firebase */
     .user-profile-card {
       margin: 15px;
       padding: 15px;
@@ -174,6 +174,14 @@
       text-overflow: ellipsis;
     }
 
+    .user-subtext {
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .user-badge {
       display: inline-block;
       background: var(--primary-orange);
@@ -182,12 +190,12 @@
       font-weight: 800;
       padding: 2px 8px;
       border-radius: 10px;
-      margin-top: 2px;
+      margin-top: 3px;
       width: fit-content;
       text-transform: uppercase;
     }
 
-    /* Menu di navigazione */
+    /* Menu Navigazione */
     .nav-menu {
       list-style: none;
       padding: 10px 15px;
@@ -226,7 +234,7 @@
       color: var(--primary-orange);
     }
 
-    /* Tasto Logout in fondo */
+    /* Tasto Logout */
     .logout-container {
       padding: 15px;
       border-top: 1px solid var(--border-color);
@@ -253,7 +261,7 @@
       background-color: #fbd5d5;
     }
 
-    /* Main Container (Iframe) */
+    /* Content Area */
     .main-content {
       margin-top: 65px;
       width: 100%;
@@ -268,7 +276,6 @@
       background-color: var(--bg-color);
     }
 
-    /* Overlay Mobile */
     .overlay {
       position: fixed;
       top: 0; left: 0;
@@ -283,7 +290,6 @@
       display: block;
     }
 
-    /* Desktop View */
     @media (min-width: 992px) {
       .sidebar {
         left: 0;
@@ -315,28 +321,28 @@
     </button>
   </header>
 
-  <!-- Overlay sfondo mobile -->
   <div class="overlay" id="overlay"></div>
 
-  <!-- Sidebar a Sinistra -->
+  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <h3><i class="fa-solid fa-code"></i> Dev Portal</h3>
       <button class="close-btn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <!-- Profilo Utente Loggato -->
+    <!-- Profilo Utente Dinamico estratto da Firebase -->
     <div class="user-profile-card">
       <div class="user-avatar" id="userAvatar">
-        <i class="fa-solid fa-cat"></i>
+        <i class="fa-solid fa-user-gear"></i>
       </div>
       <div class="user-info">
-        <span class="user-name" id="userName">Developer</span>
-        <span class="user-badge" id="userRole">DEV ACCOUNT</span>
+        <span class="user-name" id="userName">Caricamento...</span>
+        <span class="user-subtext" id="userEmail"></span>
+        <span class="user-badge" id="userBadge">DEV ACCOUNT</span>
       </div>
     </div>
 
-    <!-- Collegamenti della Sidebar -->
+    <!-- Menu Links -->
     <ul class="nav-menu">
       <li class="nav-item">
         <a href="sidebar/gestione/gestione.html" target="contentFrame" class="nav-link active">
@@ -370,7 +376,7 @@
       </li>
     </ul>
 
-    <!-- Logout -->
+    <!-- Logout Button -->
     <div class="logout-container">
       <button class="btn-logout" id="logoutBtn">
         <i class="fa-solid fa-right-from-bracket"></i> Logout
@@ -378,54 +384,85 @@
     </div>
   </aside>
 
-  <!-- Area ContenutoPrincipale (Iframe) -->
+  <!-- Frame Contenuto -->
   <main class="main-content">
     <iframe name="contentFrame" id="contentFrame" src="sidebar/gestione/gestione.html"></iframe>
   </main>
 
-  <!-- Integration Firebase Realtime DB per leggere i profili -->
+  <!-- Firebase Script con credenziali reali estratte dal tuo file -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+    // Configurazione del Firebase Realtime DB estratta dal tuo index.html
     const firebaseConfig = {
-      apiKey: "TUA_API_KEY",
-      authDomain: "meowgo-db.firebaseapp.com",
-      databaseURL: "https://meowgo-db-default-rtdb.firebaseio.com",
-      projectId: "meowgo-db",
-      storageBucket: "meowgo-db.appspot.com",
-      messagingSenderId: "XXXXXX",
-      appId: "XXXXXX"
+      apiKey: "AIzaSyDAwgqotGF0BTUGBjxOMseMMfXpBZdAUTI",
+      authDomain: "meowmaster-51991.firebaseapp.com",
+      databaseURL: "https://meowmaster-51991-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "meowmaster-51991",
+      storageBucket: "meowmaster-51991.firebasestorage.app",
+      messagingSenderId: "1079993425259",
+      appId: "1:1079993425259:web:1aa6a9e5f0a65b6ee4802e"
     };
 
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // Lettura del profilo utente da Realtime DB
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          const snapshot = await get(child(ref(db), `utenti/${user.uid}`));
-          if (snapshot.exists()) {
-            const data = snapshot.val();
-            document.getElementById('userName').textContent = data.username || data.nome || user.displayName;
-            
-            if (data.photoURL || data.avatar) {
-              document.getElementById('userAvatar').innerHTML = `<img src="${data.photoURL || data.avatar}" alt="Avatar">`;
-            }
-          }
-        } catch (e) {
-          console.log("Lettura Realtime DB opzionale:", e);
-        }
-      }
-    });
+    // Recupera l'utente salvato in locale dal sistema di login di MeowGo
+    function getLoggedUser() {
+      return JSON.parse(localStorage.getItem('meowgo_test_user')) || null;
+    }
 
-    // Azione Logout SSO
+    async function loadUserProfile() {
+      const nameEl = document.getElementById('userName');
+      const emailEl = document.getElementById('userEmail');
+      const avatarEl = document.getElementById('userAvatar');
+      const badgeEl = document.getElementById('userBadge');
+
+      const localUser = getLoggedUser();
+
+      if (localUser) {
+        nameEl.textContent = localUser.username || localUser.nome || 'Developer';
+        emailEl.textContent = localUser.email || '';
+        
+        if (localUser.avatar || localUser.photoURL) {
+          avatarEl.innerHTML = `<img src="${localUser.avatar || localUser.photoURL}" alt="Avatar">`;
+        } else {
+          avatarEl.textContent = (localUser.username || 'D').charAt(0).toUpperCase();
+        }
+
+        // Tenta di sincronizzare e aggiornare i dati in tempo reale interrogando il Realtime DB di Firebase
+        if (localUser.id) {
+          try {
+            const dbRef = ref(db);
+            const snapshot = await get(child(dbRef, `users/${localUser.id}`));
+            if (snapshot.exists()) {
+              const dbData = snapshot.val();
+              nameEl.textContent = dbData.username || nameEl.textContent;
+              emailEl.textContent = dbData.email || emailEl.textContent;
+              
+              if (dbData.role) {
+                badgeEl.textContent = dbData.role.toUpperCase();
+              }
+            }
+          } catch (err) {
+            console.log("Sincronizzazione DB in background non riuscita:", err);
+          }
+        }
+      } else {
+        // Se non c'è una sessione utente locale
+        nameEl.textContent = "Dev Admin";
+        emailEl.textContent = "dev@meowgo.it";
+      }
+    }
+
+    loadUserProfile();
+
+    // Azione Logout
     document.getElementById('logoutBtn').addEventListener('click', () => {
       sessionStorage.removeItem('meowgo_sso_authenticated');
-      window.location.href = '../index.html'; // Ritorna all'SSO nella root
+      localStorage.removeItem('meowgo_test_user');
+      window.location.href = '../index.html';
     });
   </script>
 
