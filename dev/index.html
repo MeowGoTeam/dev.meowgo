@@ -1,281 +1,101 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeowGo - Developer Portal</title>
-
-  <!-- Font & Icone -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      --bg-color: #f7f0ea;
-      --card-bg: #ffffff;
-      --primary-orange: #d96b27;
-      --text-dark: #3a2e2b;
-      --text-muted: #8c7b75;
-      --border-color: #f0e2d8;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-
-    body {
-      background: radial-gradient(circle at top, #fdf6f0 0%, #f7f0ea 100%);
-      color: var(--text-dark);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
-
-    /* Container Principale */
-    .dev-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 32px;
-      padding: 44px 32px;
-      max-width: 440px;
-      width: 100%;
-      box-shadow: 0 20px 40px rgba(58, 46, 43, 0.06);
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* Striscia superiore decorativa */
-    .dev-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 6px;
-      background: linear-gradient(90deg, #d96b27, #f3a675);
-    }
-
-    /* Logo Ufficiale MeowGo */
-    .brand-logo {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .brand-logo i {
-      font-size: 2.2rem;
-      color: var(--primary-orange);
-    }
-
-    .brand-logo span {
-      font-size: 1.8rem;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: var(--text-dark);
-    }
-
-    /* Pill/Badge di Stato */
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #fdf6f0;
-      border: 1px solid var(--border-color);
-      padding: 6px 16px;
-      border-radius: 100px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--primary-orange);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-bottom: 20px;
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      background-color: var(--primary-orange);
-      border-radius: 50%;
-      box-shadow: 0 0 0 3px rgba(217, 107, 39, 0.2);
-      animation: pulse 1.8s infinite;
-    }
-
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(217, 107, 39, 0.4); }
-      70% { box-shadow: 0 0 0 8px rgba(217, 107, 39, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(217, 107, 39, 0); }
-    }
-
-    /* Testi */
-    h1 {
-      font-size: 1.55rem;
-      font-weight: 800;
-      color: var(--text-dark);
-      margin-bottom: 12px;
-      line-height: 1.3;
-    }
-
-    p {
-      color: var(--text-muted);
-      font-size: 0.92rem;
-      line-height: 1.6;
-      font-weight: 500;
-      margin-bottom: 24px;
-    }
-
-    /* Box Informazioni e Contatti */
-    .contact-notice-box {
-      background: #fcf8f5;
-      border: 1px solid var(--border-color);
-      border-radius: 18px;
-      padding: 16px 18px;
-      margin-bottom: 28px;
-      text-align: left;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .contact-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-dark);
-    }
-
-    .contact-item span:first-child {
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .contact-item a {
-      color: var(--primary-orange);
-      text-decoration: none;
-      font-weight: 700;
-    }
-
-    .contact-item a:hover {
-      text-decoration: underline;
-    }
-
-    /* Gruppo Bottoni */
-    .action-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .btn-primary {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      width: 100%;
-      background-color: var(--primary-orange);
-      color: #ffffff;
-      text-decoration: none;
-      padding: 14px 20px;
-      border-radius: 16px;
-      font-weight: 700;
-      font-size: 0.95rem;
-      box-shadow: 0 8px 18px rgba(217, 107, 39, 0.2);
-      transition: all 0.2s ease;
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 22px rgba(217, 107, 39, 0.3);
-    }
-
-    .btn-secondary {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      width: 100%;
-      background-color: transparent;
-      color: var(--text-dark);
-      border: 1px solid var(--border-color);
-      text-decoration: none;
-      padding: 12px 20px;
-      border-radius: 16px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      transition: all 0.2s ease;
-    }
-
-    .btn-secondary:hover {
-      background-color: #fdf6f0;
-      border-color: var(--primary-orange);
-      color: var(--primary-orange);
-    }
-
-    /* Footer Copyright */
-    .dev-footer {
-      margin-top: 24px;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      font-weight: 600;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeowGo Dev Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="bg-[#0a0814] text-white min-h-screen flex">
 
-  <div class="dev-card">
-    <!-- Logo Ufficiale MeowGo -->
-    <div class="brand-logo">
-      <i class="fa-solid fa-cat"></i>
-      <span>MeowGo</span>
-    </div>
+    <!-- Sidebar / Navigazione pagine -->
+    <aside class="w-64 bg-white/5 backdrop-blur-2xl border-r border-white/10 p-6 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center space-x-3 mb-10">
+                <img id="userAvatar" src="" class="w-12 h-12 rounded-xl object-cover border border-white/20">
+                <div>
+                    <h2 id="userName" class="font-bold text-sm">Caricamento...</h2>
+                    <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Online Developer</span>
+                </div>
+            </div>
 
-    <!-- Status Badge -->
-    <div class="status-pill">
-      <span class="status-dot"></span> Developer Portal
-    </div>
+            <nav class="space-y-2">
+                <a href="#" onclick="loadPage('notifiche.html')" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-white/10 text-sm font-medium transition">
+                    <i class="fa-solid fa-bell text-rose-400"></i>
+                    <span>Notifiche</span>
+                </a>
+                <a href="#" onclick="loadPage('features.html')" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-white/10 text-sm font-medium transition">
+                    <i class="fa-solid fa-code text-indigo-400"></i>
+                    <span>Features Preview</span>
+                </a>
+                <a href="#" onclick="loadPage('database.html')" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-white/10 text-sm font-medium transition">
+                    <i class="fa-solid fa-database text-amber-400"></i>
+                    <span>Database Realtime</span>
+                </a>
+            </nav>
+        </div>
 
-    <h1>Area Riservata in Sviluppo</h1>
+        <button onclick="logout()" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-200 text-sm font-medium transition">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Disconnettiti</span>
+        </button>
+    </aside>
 
-    <p>Il Portale Sviluppatori di MeowGo è attualmente in fase di allestimento. L'accesso è temporaneamente limitato.</p>
+    <!-- Area Principale dei Contenuti -->
+    <main class="flex-1 p-10 overflow-y-auto">
+        <header class="mb-8 flex justify-between items-center border-b border-white/10 pb-4">
+            <h1 class="text-2xl font-extrabold tracking-tight">MeowGo Dashboard</h1>
+            <span class="text-xs text-white/50">Ambiente di Sviluppo Protetto</span>
+        </header>
 
-    <!-- Box Contatti ed Info Ufficiali -->
-    <div class="contact-notice-box">
-      <div class="contact-item">
-        <span><i class="fa-solid fa-envelope"></i> Supporto Dev</span>
-        <a href="mailto:team@meowgo.it">team@meowgo.it</a>
-      </div>
-      <div class="contact-item">
-        <span><i class="fa-solid fa-lock"></i> Accesso</span>
-        <span>Solo autorizzati</span>
-      </div>
-    </div>
+        <!-- Contenuto Dinamico Caricato dalla cartella /sidebar/ -->
+        <div id="contentArea" class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl min-h-[400px]">
+            <h2 class="text-lg font-bold mb-2">Benvenuto nel pannello di controllo</h2>
+            <p class="text-sm text-white/60">Seleziona una voce dalla barra laterale per caricare la pagina corrispondente dalla cartella <code class="bg-black/30 px-2 py-1 rounded text-rose-300">/sidebar/</code>.</p>
+        </div>
+    </main>
 
-    <!-- Gruppo Pulsanti di Navigazione -->
-    <div class="action-buttons">
-      <a href="../index.html" class="btn-primary">
-        <i class="fa-solid fa-right-to-bracket"></i> Schermata di Accesso
-      </a>
-      <a href="https://meowgo.it" class="btn-secondary" target="_blank">
-        <i class="fa-solid fa-globe"></i> Vai su meowgo.it
-      </a>
-    </div>
-  </div>
+    <script>
+        // Caricamento profilo utente da localStorage / sessione
+        window.addEventListener('DOMContentLoaded', () => {
+            const userData = JSON.parse(localStorage.getItem('meowgo_sso_user'));
+            if (!userData) {
+                window.location.href = '../meowgo_dev_portal_sso_login.html'; // Ritorna al login se non autenticato
+                return;
+            }
 
-  <div class="dev-footer">
-    &copy; 2026 MeowGo Dev Team • Tutti i diritti riservati
-  </div>
+            document.getElementById('userName').textContent = userData.name;
+            document.getElementById('userAvatar').src = userData.avatar;
+        });
 
+        // Funzione per caricare le pagine della cartella /sidebar/ dinamicamente
+        function loadPage(pageName) {
+            const contentArea = document.getElementById('contentArea');
+            contentArea.innerHTML = `<div class="flex justify-center items-center py-20"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-rose-500"></i></div>`;
+            
+            fetch(`sidebar/${pageName}`)
+                .then(response => {
+                    if (!response.ok) throw new Error("Pagina non trovata");
+                    return response.text();
+                })
+                .then(html => {
+                    contentArea.innerHTML = html;
+                })
+                .catch(err => {
+                    contentArea.innerHTML = `
+                        <div class="text-center py-10">
+                            <i class="fa-solid fa-triangle-exclamation text-3xl text-amber-400 mb-3"></i>
+                            <h3 class="font-bold text-base">Modulo non ancora disponibile</h3>
+                            <p class="text-xs text-white/60 mt-1">Crea il file <code class="text-rose-300">/sidebar/${pageName}</code> per visualizzarlo qui.</p>
+                        </div>`;
+                });
+        }
+
+        function logout() {
+            localStorage.removeItem('meowgo_sso_user');
+            window.location.href = '../meowgo_dev_portal_sso_login.html';
+        }
+    </script>
 </body>
 </html>
