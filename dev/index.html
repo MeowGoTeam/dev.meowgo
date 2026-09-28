@@ -48,21 +48,6 @@
             transform: translateY(-3px);
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
         }
-
-        .liquid-btn {
-            background: rgba(255, 255, 255, 0.95);
-            color: #000000;
-            border: none;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-            border-radius: 16px;
-            transition: all 0.25s ease;
-        }
-        
-        .liquid-btn:hover { 
-            transform: scale(1.02); 
-            background: #ffffff; 
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
-        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col p-4 md:p-8 select-none">
@@ -94,13 +79,13 @@
     <!-- Griglia Principale dei Pulsanti e Collegamenti -->
     <main class="w-full max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 flex-1">
         
-        <!-- Collegamento 1: Admin (/sidebar/dev/admin) -->
-        <a href="/sidebar/dev/admin.html" class="glass-card p-6 flex flex-col justify-between group">
+        <!-- Collegamento 1: Admin (sidebar/dev/admin.html)[cite: 7] -->
+        <a href="sidebar/dev/admin.html" class="glass-card p-6 flex flex-col justify-between group">
             <div class="flex items-start justify-between mb-4">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border border-white/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition">
                     <i class="fa-solid fa-user-shield text-lg"></i>
                 </div>
-                <span class="text-[10px] font-mono bg-white/5 px-2.5 py-1 rounded-lg text-white/40 border border-white/5">/sidebar/dev/admin</span>
+                <span class="text-[10px] font-mono bg-white/5 px-2.5 py-1 rounded-lg text-white/40 border border-white/5">sidebar/dev/admin.html</span>
             </div>
             <div>
                 <h3 class="text-base font-bold text-white group-hover:text-purple-300 transition">Pannello Admin</h3>
@@ -112,13 +97,13 @@
             </div>
         </a>
 
-        <!-- Collegamento 2: Preview (/sidebar/dev/preview) -->
-        <a href="/sidebar/dev/preview.html" class="glass-card p-6 flex flex-col justify-between group">
+        <!-- Collegamento 2: Preview (sidebar/dev/preview.html) -->
+        <a href="sidebar/dev/preview.html" class="glass-card p-6 flex flex-col justify-between group">
             <div class="flex items-start justify-between mb-4">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-white/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition">
                     <i class="fa-solid fa-eye text-lg"></i>
                 </div>
-                <span class="text-[10px] font-mono bg-white/5 px-2.5 py-1 rounded-lg text-white/40 border border-white/5">/sidebar/dev/preview</span>
+                <span class="text-[10px] font-mono bg-white/5 px-2.5 py-1 rounded-lg text-white/40 border border-white/5">sidebar/dev/preview.html</span>
             </div>
             <div>
                 <h3 class="text-base font-bold text-white group-hover:text-cyan-300 transition">Preview & Test UI</h3>
@@ -130,13 +115,13 @@
             </div>
         </a>
 
-        <!-- Collegamento 3: Notifiche -->
-        <a href="/sidebar/notifiche.html" class="glass-card p-6 flex flex-col justify-between group">
+        <!-- Collegamento 3: Notifiche (sidebar/notifiche.html) -->
+        <a href="sidebar/notifiche.html" class="glass-card p-6 flex flex-col justify-between group">
             <div class="flex items-start justify-between mb-4">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500/20 to-rose-500/20 border border-white/10 flex items-center justify-center text-pink-400 group-hover:scale-110 transition">
                     <i class="fa-solid fa-bell text-lg"></i>
                 </div>
-                <span class="text-[10px] font-mono bg-white/5 px-2.5 py-1 rounded-lg text-white/40 border border-white/5">/sidebar/notifiche</span>
+                <span class="text-[10px] font-mono bg-white/5 px-2.5 py-1 rounded-lg text-white/40 border border-white/5">sidebar/notifiche.html</span>
             </div>
             <div>
                 <h3 class="text-base font-bold text-white group-hover:text-pink-300 transition">Centro Notifiche</h3>
@@ -148,13 +133,13 @@
             </div>
         </a>
 
-        <!-- Collegamento 4: Database Console -->
-        <a href="/sidebar/database.html" class="glass-card p-6 flex flex-col justify-between group">
+        <!-- Collegamento 4: Database Console (sidebar/database.html) -->
+        <a href="sidebar/database.html" class="glass-card p-6 flex flex-col justify-between group">
             <div class="flex items-start justify-between mb-4">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-white/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition">
                     <i class="fa-solid fa-database text-lg"></i>
                 </div>
-                <span class="text-[10px] font-mono bg-white/5 px-2.5 py-1 rounded-lg text-white/40 border border-white/5">/sidebar/database</span>
+                <span class="text-[10px] font-mono bg-white/5 px-2.5 py-1 rounded-lg text-white/40 border border-white/5">sidebar/database.html</span>
             </div>
             <div>
                 <h3 class="text-base font-bold text-white group-hover:text-amber-300 transition">Realtime Database</h3>
@@ -178,7 +163,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             const savedUser = localStorage.getItem('meowgo_sso_user');
             if (!savedUser) {
-                // Se non è loggato, reindirizza alla pagina di login principale
+                // Se non è loggato, reindirizza alla home principale
                 window.location.href = '../index.html'; 
                 return;
             }
