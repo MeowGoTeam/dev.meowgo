@@ -61,7 +61,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             const userData = JSON.parse(localStorage.getItem('meowgo_sso_user'));
             if (!userData) {
-                window.location.href = '../meowgo_dev_portal_sso_login.html'; // Ritorna al login se non autenticato
+                window.location.href = '../index.html'; // Ritorna al login se non autenticato
                 return;
             }
 
