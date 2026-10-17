@@ -1,9 +1,29 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, push, get, child, update, remove, onValue, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
+import {
+  getDatabase,
+  ref,
+  push,
+  get,
+  update,
+  remove,
+  onValue,
+  onChildAdded,
+  set
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+  getMessaging,
+  getToken,
+  onMessage
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
 
-// Vecchia API Key ImgBB ripristinata
-const IMGBB_API_KEY = "82fcd1a9192375d6c456c52e7979599c";
+// Inserisci qui la tua chiave ImgBB.
+// La chiave è esposta nel browser: controllala e ruotala se necessario.
+const IMGBB_API_KEY = "INSERISCI_LA_TUA_CHIAVE_IMGBB";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBvptRA3ls2WZkiFaAsBqcmyxYtq4IZkXg",
@@ -17,435 +37,626 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
+
 let messaging = null;
+let currentUser = null;
 
-function getCurrentUser() {
-  return JSON.parse(localStorage.getItem('meowgo_test_user')) || null;
-}
-function setCurrentUser(user) {
-  localStorage.setItem('meowgo_test_user', JSON.stringify(user));
-}
-function clearCurrentUser() {
-  localStorage.removeItem('meowgo_test_user');
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem("meowgo_test_user")) || null;
+  } catch {
+    return null;
+  }
 }
 
-const currentUser = getCurrentUser();
+function setStoredUser(user) {
+  localStorage.setItem("meowgo_test_user", JSON.stringify(user));
+}
+
+function clearStoredUser() {
+  localStorage.removeItem("meowgo_test_user");
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[character]);
+}
+
+function showError(message) {
+  console.error(message);
+  alert(message);
+}
+
+// Attende il ripristino della sessione Firebase.
+const authenticatedUser = await new Promise(resolve => {
+  const unsubscribe = onAuthStateChanged(auth, user => {
+    unsubscribe();
+    resolve(user || null);
+  }, () => resolve(null));
+});
+
+if (!authenticatedUser) {
+  clearStoredUser();
+  window.location.replace("../login/login.html");
+  throw new Error("Sessione Firebase assente.");
+}
+
+const storedUser = getStoredUser();
+
+// La UID Firebase autenticata è l'identificatore attendibile.
+currentUser = {
+  ...(storedUser || {}),
+  id: authenticatedUser.uid,
+  uid: authenticatedUser.uid,
+  email: authenticatedUser.email || "",
+  username: storedUser?.username || authenticatedUser.displayName || "Utente",
+  xp: Number(storedUser?.xp || 0),
+  catsFound: Number(storedUser?.catsFound || 0),
+  badges: storedUser?.badges || {}
+};
+
+setStoredUser(currentUser);
+
+// ------------------------------
+// NOTIFICHE
+// ------------------------------
 
 try {
   messaging = getMessaging(app);
-  Notification.requestPermission().then(async (permission) => {
-    if (permission === 'granted' && 'serviceWorker' in navigator) {
-      const swReg = await navigator.serviceWorker.register('../../firebase-messaging-sw.js');
-      const token = await getToken(messaging, { serviceWorkerRegistration: swReg });
-      if (token && currentUser) {
-        update(ref(db, `users/${currentUser.id}`), { fcmToken: token });
-      }
-    }
-  });
-} catch (e) {
-  console.warn("FCM non supportato in questo browser:", e);
+
+  if ("Notification" in window && "serviceWorker" in navigator) {
+    Notification.requestPermission().then(async permission => {
+      if (permission !== "granted") return;
+
+      const registration = await navigator.serviceWorker.register(
+        "../../firebase-messaging-sw.js"
+      );
+
+      // Il token non viene salvato nel profilo perché le regole fornite
+      // non prevedono un campo per questo dato.
+      await getToken(messaging, {
+        serviceWorkerRegistration: registration
+      }).catch(error => {
+        console.warn("Token notifiche non disponibile:", error);
+      });
+    }).catch(error => {
+      console.warn("Permesso notifiche non disponibile:", error);
+    });
+  }
+} catch (error) {
+  console.warn("Notifiche non disponibili:", error);
 }
 
 if (messaging) {
-  onMessage(messaging, (payload) => {
+  onMessage(messaging, payload => {
     if (payload.notification) {
-      sendNativeNotification(payload.notification.title || "MeowGo", payload.notification.body || "", payload.notification.image);
+      sendNativeNotification(
+        payload.notification.title || "MeowGo",
+        payload.notification.body || "",
+        payload.notification.image || null
+      );
     }
   });
 }
 
 async function sendNativeNotification(title, body, imageUrl = null) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
 
   const options = {
     body: body || "",
-    icon: '../../assets/icons/icon-512.png',
-    badge: '../../assets/icons/icon-512.png',
-    image: imageUrl || null,
-    vibrate: [100, 50, 100],
-    data: { url: new URL('../feed/feed.html', location.href).href },
-    actions: [
-      { action: 'open', title: '👀 Guarda Feed' },
-      { action: 'close', title: 'Chiudi' }
-    ]
+    icon: "../../assets/icons/icon-512.png",
+    badge: "../../assets/icons/icon-512.png",
+    data: {
+      url: new URL("../feed/feed.html", location.href).href
+    }
   };
 
+  if (imageUrl) options.image = imageUrl;
+
   try {
-    const reg = await navigator.serviceWorker.ready;
-    if (reg && reg.showNotification) {
-      await reg.showNotification(title || "MeowGo", options);
+    const registration = await navigator.serviceWorker.ready;
+
+    if (registration?.showNotification) {
+      await registration.showNotification(title || "MeowGo", options);
     } else {
       new Notification(title || "MeowGo", options);
     }
-  } catch (err) {
-    console.warn("Errore notifica nativa:", err);
+  } catch (error) {
+    console.warn("Errore notifica:", error);
   }
 }
 
-function renderNavbar(activePage, requireAuth = true) {
-  const activeUser = getCurrentUser();
-  const navLinks = document.getElementById('nav-links');
+// ------------------------------
+// NAVIGAZIONE
+// ------------------------------
 
-  if (activeUser) {
-    navLinks.innerHTML = `
-      <li class="nav-item"><a class="nav-link fw-bold ${activePage === 'feed' ? 'text-warning' : 'text-dark'}" href="../feed/feed.html"><i class="fa-solid fa-newspaper"></i> Feed</a></li>
-      <li class="nav-item"><a class="nav-link fw-bold ${activePage === 'garden' ? 'text-warning' : 'text-success'}" href="../garden/garden.html"><i class="fa-solid fa-tree"></i> MeowGarden</a></li>
-      <li class="nav-item"><a class="nav-link fw-bold ${activePage === 'profile' ? 'text-warning' : 'text-dark'}" href="./profile.html"><i class="fa-solid fa-user"></i> Profilo (${activeUser.username})</a></li>
-      <li class="nav-item"><a class="nav-link fw-bold text-danger" href="#" id="logout-link"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
-    `;
-    const logoutLink = document.getElementById('logout-link');
-    if (logoutLink) {
-      logoutLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        clearCurrentUser();
-        window.location.href = '../login/login.html';
-      });
-    }
-  } else {
-    navLinks.innerHTML = `
-      <li class="nav-item"><a class="nav-link fw-bold text-dark" href="../login/login.html"><i class="fa-solid fa-right-to-bracket"></i> Accedi</a></li>
-    `;
-    if (requireAuth && activePage !== 'login') {
-      window.location.replace('../login/login.html');
-    }
-  }
+function renderNavbar(activePage) {
+  const navLinks = document.getElementById("nav-links");
+  if (!navLinks) return;
 
-  return activeUser;
+  const username = escapeHTML(currentUser.username);
+
+  navLinks.innerHTML = `
+    <li class="nav-item">
+      <a class="nav-link fw-bold ${activePage === "feed" ? "text-warning" : "text-dark"}"
+         href="../feed/feed.html">
+        <i class="fa-solid fa-newspaper"></i> Feed
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link fw-bold ${activePage === "garden" ? "text-warning" : "text-success"}"
+         href="../garden/garden.html">
+        <i class="fa-solid fa-tree"></i> MeowGarden
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link fw-bold ${activePage === "profile" ? "text-warning" : "text-dark"}"
+         href="./profile.html">
+        <i class="fa-solid fa-user"></i> Profilo (${username})
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link fw-bold text-danger" href="#" id="logout-link">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </a>
+    </li>
+  `;
+
+  const logoutLink = document.getElementById("logout-link");
+
+  logoutLink?.addEventListener("click", async event => {
+    event.preventDefault();
+
+    try {
+      await signOut(auth);
+    } finally {
+      clearStoredUser();
+      window.location.href = "../login/login.html";
+    }
+  });
 }
 
-renderNavbar('profile');
+renderNavbar("profile");
+
+// ------------------------------
+// PROFILO
+// ------------------------------
 
 function renderProfileHeader(user) {
   if (!user) return;
-  document.getElementById('user-display-name').innerText = user.username;
-  document.getElementById('user-email-badge').innerText = user.email;
 
-  const bioEl = document.getElementById('user-bio');
-  bioEl.innerText = user.bio ? user.bio : '';
+  const nameElement = document.getElementById("user-display-name");
+  const emailElement = document.getElementById("user-email-badge");
+  const bioElement = document.getElementById("user-bio");
+  const avatarElement = document.getElementById("user-avatar");
 
-  const avatarEl = document.getElementById('user-avatar');
-  if (user.photoURL) {
-    avatarEl.innerHTML = `<img src="${user.photoURL}" alt="Foto profilo di ${user.username}">`;
-  } else {
-    avatarEl.innerHTML = '😸';
+  if (nameElement) nameElement.textContent = user.username || "Utente";
+  if (emailElement) emailElement.textContent = user.email || "";
+  if (bioElement) bioElement.textContent = user.bio || "";
+
+  if (avatarElement) {
+    avatarElement.replaceChildren();
+
+    if (user.photoURL) {
+      const image = document.createElement("img");
+      image.src = user.photoURL;
+      image.alt = "Foto profilo";
+      avatarElement.appendChild(image);
+    } else {
+      avatarElement.textContent = "😸";
+    }
   }
 }
 
-if (currentUser) {
+renderProfileHeader(currentUser);
+updateUI();
+
+// Carica i dati del profilo dal database.
+onValue(ref(db, `users/${currentUser.uid}`), snapshot => {
+  if (!snapshot.exists()) return;
+
+  const data = snapshot.val();
+
+  currentUser = {
+    ...currentUser,
+    username: data.username || currentUser.username,
+    xp: Number(data.xp || 0),
+    catsFound: Number(data.catsFound || 0),
+    badges: data.badges || {}
+  };
+
+  setStoredUser(currentUser);
   renderProfileHeader(currentUser);
-  checkBanStatus();
-  listenToAdminNotifications();
   updateUI();
-
-  onValue(ref(db, `users/${currentUser.id}`), (snapshot) => {
-    if (snapshot.exists()) {
-      const dbUser = { ...currentUser, ...snapshot.val() };
-      setCurrentUser(dbUser);
-      renderProfileHeader(dbUser);
-    }
-  });
-}
-
-function checkBanStatus() {
-  if (!currentUser || !currentUser.id) return;
-  const userRef = ref(db, 'users/' + currentUser.id);
-  onValue(userRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const userData = snapshot.val();
-      if (userData.bannedUntil) {
-        const isBanned = userData.bannedUntil === 'indefinite' || new Date(userData.bannedUntil) > new Date();
-        if (isBanned) {
-          clearCurrentUser();
-          document.body.innerHTML = `
-            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; text-align:center; padding:20px; font-family:sans-serif;">
-              <h1 style="color: #dc2626; font-size: 2.5rem; font-weight: bold;">⛔ ACCOUNT BLOCCATO</h1>
-              <p style="font-size: 1.2rem; color: #4b5563;">Sei stato sospeso da MeowGo.</p>
-              <p><strong>Motivo:</strong> ${userData.banReason || 'Violazione delle regole della community'}</p>
-              <a href="../login/login.html" class="btn btn-warning mt-3">Torna alla Login</a>
-            </div>
-          `;
-        }
-      }
-    }
-  });
-}
-
-function listenToAdminNotifications() {
-  if (!currentUser) return;
-
-  const globalNotifRef = ref(db, 'notifications/global');
-  onChildAdded(globalNotifRef, (snapshot) => {
-    const notif = snapshot.val();
-    const notifId = snapshot.key;
-    const lastSeenGlobal = localStorage.getItem('meowgo_last_seen_global') || '';
-
-    if (notif && notifId !== lastSeenGlobal) {
-      sendNativeNotification(notif.title || "MeowGo", notif.message || "");
-      localStorage.setItem('meowgo_last_seen_global', notifId);
-    }
-  });
-
-  if (currentUser.id) {
-    const directNotifRef = ref(db, 'notifications/direct/' + currentUser.id);
-    onChildAdded(directNotifRef, (snapshot) => {
-      const notif = snapshot.val();
-      const notifId = snapshot.key;
-
-      if (notif && notif.read !== true) {
-        sendNativeNotification(notif.title || "MeowGo", notif.message || "");
-
-        update(ref(db, `notifications/direct/${currentUser.id}/${notifId}`), {
-          read: true
-        }).catch(err => console.error("Errore aggiornamento stato notifica:", err));
-      }
-    });
-  }
-}
-
-const deleteModalEl = document.getElementById('deletePostModal');
-const deleteModal = new bootstrap.Modal(deleteModalEl);
-const settingsSidebarEl = document.getElementById('settings-sidebar');
-const settingsSidebar = bootstrap.Offcanvas.getOrCreateInstance(settingsSidebarEl);
-
-document.getElementById('open-delete-modal-btn').addEventListener('click', () => {
-  settingsSidebar.hide();
-  loadMyPosts();
-  deleteModal.show();
+}, error => {
+  console.error("Errore caricamento profilo:", error);
 });
 
-const sidebarLogoutLink = document.getElementById('sidebar-logout-link');
-if (sidebarLogoutLink) {
-  sidebarLogoutLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    clearCurrentUser();
-    window.location.href = '../login/login.html';
+// ------------------------------
+// BAN
+// ------------------------------
+
+function checkBanStatus() {
+  onValue(ref(db, `bans/${currentUser.uid}`), snapshot => {
+    if (!snapshot.exists()) return;
+
+    const ban = snapshot.val();
+    const until = ban?.until;
+
+    // Le regole fornite salvano until come stringa.
+    // Il formato deve essere concordato con chi gestisce i ban.
+    const isPermanent = until === "indefinite";
+    const expiry = until ? Date.parse(until) : NaN;
+    const isActive = isPermanent || (Number.isFinite(expiry) && expiry > Date.now());
+
+    if (!isActive) return;
+
+    document.body.innerHTML = `
+      <main style="max-width:650px;margin:12vh auto;padding:24px;text-align:center;font-family:sans-serif">
+        <h1 style="color:#dc2626">⛔ Account bloccato</h1>
+        <p>Il tuo account è stato sospeso da MeowGo.</p>
+        <p>Motivo: ${escapeHTML(ban.reason || "Violazione delle regole della community")}</p>
+        <a href="../login/login.html">Torna alla pagina di accesso</a>
+      </main>
+    `;
+  }, error => {
+    console.error("Errore controllo ban:", error);
   });
 }
 
-function formatPostTimestamp(post) {
-  if (post.date && post.time) {
-    return `${post.date} - ${post.time}`;
-  } else if (post.createdAt) {
-    const d = new Date(post.createdAt);
-    return `${d.toLocaleDateString('it-IT')} - ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-  } else {
-    return post.time || 'Data non disponibile';
+checkBanStatus();
+
+// ------------------------------
+// NOTIFICHE DATABASE
+// ------------------------------
+
+// Nota: le regole che hai fornito non autorizzano necessariamente
+// notifications/global o notifications/direct/{uid}.
+// Non attiviamo queste letture finché i percorsi non sono stati
+// allineati alle regole effettive del progetto.
+
+// ------------------------------
+// MODAL E PANNELLO IMPOSTAZIONI
+// ------------------------------
+
+const deleteModalElement = document.getElementById("deletePostModal");
+const deleteModal = deleteModalElement && window.bootstrap
+  ? new bootstrap.Modal(deleteModalElement)
+  : null;
+
+const settingsSidebarElement = document.getElementById("settings-sidebar");
+const settingsSidebar = settingsSidebarElement && window.bootstrap
+  ? bootstrap.Offcanvas.getOrCreateInstance(settingsSidebarElement)
+  : null;
+
+document.getElementById("open-delete-modal-btn")?.addEventListener("click", () => {
+  settingsSidebar?.hide();
+  loadMyPosts();
+  deleteModal?.show();
+});
+
+document.getElementById("sidebar-logout-link")?.addEventListener("click", async event => {
+  event.preventDefault();
+
+  try {
+    await signOut(auth);
+  } finally {
+    clearStoredUser();
+    window.location.href = "../login/login.html";
   }
+});
+
+// ------------------------------
+// POST DEL PROFILO
+// ------------------------------
+
+function formatPostTimestamp(post) {
+  if (post.createdAt) {
+    const date = new Date(post.createdAt);
+
+    return `${date.toLocaleDateString("it-IT")} - ${
+      date.toLocaleTimeString("it-IT", {
+        hour: "2-digit",
+        minute: "2-digit"
+      })
+    }`;
+  }
+
+  return "Data non disponibile";
 }
 
 async function loadMyPosts() {
-  const container = document.getElementById('my-posts-list');
-  container.innerHTML = '<p class="text-center text-muted my-3">Caricamento post...</p>';
+  const container = document.getElementById("my-posts-list");
+  if (!container) return;
+
+  container.textContent = "Caricamento post...";
 
   try {
-    const snapshot = await get(ref(db, 'cats'));
+    const snapshot = await get(ref(db, "sightings"));
+
     if (!snapshot.exists()) {
-      container.innerHTML = '<p class="text-center text-muted my-3">Non hai ancora pubblicato nessun post.</p>';
+      container.textContent = "Non hai ancora pubblicato nessun post.";
       return;
     }
 
     const data = snapshot.val();
-    const myPosts = [];
-    for (let key in data) {
-      if (data[key].author === currentUser.username && data[key].deleted !== true) {
-        myPosts.push({ id: key, ...data[key] });
-      }
-    }
 
-    if (myPosts.length === 0) {
-      container.innerHTML = '<p class="text-center text-muted my-3">Non hai ancora pubblicato nessun post attivo.</p>';
+    const posts = Object.entries(data)
+      .filter(([, post]) =>
+        post &&
+        post.userId === currentUser.uid &&
+        post.deleted !== true
+      )
+      .map(([id, post]) => ({
+        id,
+        ...post,
+        imageUrl: post.photo || ""
+      }))
+      .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
+    container.replaceChildren();
+
+    if (posts.length === 0) {
+      container.textContent = "Non hai ancora pubblicato nessun post attivo.";
       return;
     }
 
-    container.innerHTML = '';
-    myPosts.reverse().forEach(post => {
-      const dateTimeStr = formatPostTimestamp(post);
-      const item = document.createElement('div');
-      item.className = "d-flex align-items-center justify-content-between p-2 border rounded-3 bg-white shadow-sm";
-      item.innerHTML = `
-        <div class="d-flex align-items-center gap-3">
-          <img src="${post.imageUrl}" class="my-post-thumb" alt="${post.catName}">
-          <div>
-            <h6 class="mb-0 fw-bold text-dark">${post.catName}</h6>
-            <small class="text-muted"><i class="fa-regular fa-calendar-days me-1"></i>${dateTimeStr}</small>
-          </div>
-        </div>
-        <button class="btn btn-outline-danger btn-sm rounded-3 ms-2" onclick="confirmAndDeletePost('${post.id}')">
-          <i class="fa-solid fa-trash-can"></i>
-        </button>
-      `;
+    posts.forEach(post => {
+      const item = document.createElement("div");
+      item.className =
+        "d-flex align-items-center justify-content-between p-2 border rounded-3 bg-white shadow-sm";
+
+      const details = document.createElement("div");
+      details.className = "d-flex align-items-center gap-3";
+
+      const image = document.createElement("img");
+      image.className = "my-post-thumb";
+      image.src = post.imageUrl;
+      image.alt = post.catName || "Foto gatto";
+
+      const textWrap = document.createElement("div");
+
+      const title = document.createElement("h6");
+      title.className = "mb-0 fw-bold text-dark";
+      title.textContent = post.catName || "Gatto";
+
+      const date = document.createElement("small");
+      date.className = "text-muted";
+      date.textContent = formatPostTimestamp(post);
+
+      textWrap.append(title, date);
+      details.append(image, textWrap);
+
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "btn btn-outline-danger btn-sm rounded-3 ms-2";
+      deleteButton.textContent = "Elimina";
+      deleteButton.addEventListener("click", () => {
+        window.confirmAndDeletePost(post.id);
+      });
+
+      item.append(details, deleteButton);
       container.appendChild(item);
     });
-
-  } catch (err) {
-    container.innerHTML = `<p class="text-danger small my-3">${err.message}</p>`;
+  } catch (error) {
+    console.error("Errore caricamento post:", error);
+    container.textContent = "Non è stato possibile caricare i post. Riprova.";
   }
 }
 
 window.confirmAndDeletePost = async function(postId) {
-  const confirmed = confirm("Sei sicuro di cancellare questo post? Se lo cancelli diminuiranno anche i punti XP perché quando andrai a cancellare il post dal database andrai in automatico anche a cancellare l'XP dell'utente.");
-  if (!confirmed) return;
+  if (!confirm("Vuoi davvero eliminare questo post?")) return;
 
   try {
-    await remove(ref(db, `cats/${postId}`));
+    // Le regole devono permettere al proprietario di eliminare
+    // il proprio avvistamento. La UID viene verificata da Firebase.
+    await remove(ref(db, `sightings/${postId}`));
 
-    currentUser.xp = Math.max(0, (currentUser.xp || 0) - 100);
-    currentUser.catsFound = Math.max(0, (currentUser.catsFound || 0) - 1);
-    setCurrentUser(currentUser);
-
-    await update(ref(db, `users/${currentUser.id}`), {
-      xp: currentUser.xp,
-      catsFound: currentUser.catsFound
-    });
-
-    updateUI();
-    loadMyPosts();
-
-  } catch (err) {
-    alert("Errore durante l'eliminazione: " + err.message);
+    // XP e badge NON vengono modificati dal client:
+    // devono essere gestiti da un backend fidato per evitare manipolazioni.
+    await loadMyPosts();
+  } catch (error) {
+    console.error("Errore eliminazione post:", error);
+    showError(
+      "Impossibile eliminare il post. Verifica i permessi Firebase e riprova."
+    );
   }
 };
 
-document.getElementById('upload-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const nameInput = document.getElementById('cat-name-input');
-  const photoInput = document.getElementById('cat-photo-input');
-  const uploadBtn = document.getElementById('upload-btn');
+// ------------------------------
+// CARICAMENTO FOTO E AVVISTAMENTO
+// ------------------------------
 
-  if (!photoInput.files || !photoInput.files[0] || !currentUser) return;
+const uploadForm = document.getElementById("upload-form");
 
-  const catName = nameInput.value.trim();
-  const n = catName.toLowerCase();
+uploadForm?.addEventListener("submit", async event => {
+  event.preventDefault();
 
-  uploadBtn.disabled = true;
-  uploadBtn.innerHTML = `Caricamento... ⏳`;
+  const nameInput = document.getElementById("cat-name-input");
+  const photoInput = document.getElementById("cat-photo-input");
+  const uploadButton = document.getElementById("upload-btn");
+
+  if (!auth.currentUser || auth.currentUser.uid !== currentUser.uid) {
+    showError("La sessione non è valida. Accedi nuovamente.");
+    return;
+  }
+
+  const photoFile = photoInput?.files?.[0];
+
+  if (!photoFile) {
+    showError("Seleziona una foto prima di caricare.");
+    return;
+  }
+
+  if (!IMGBB_API_KEY || IMGBB_API_KEY === "INSERISCI_LA_TUA_CHIAVE_IMGBB") {
+    showError("Configura la chiave ImgBB prima di caricare le immagini.");
+    return;
+  }
+
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+  if (!allowedTypes.includes(photoFile.type)) {
+    showError("Formato non supportato. Usa JPG, PNG o WebP.");
+    return;
+  }
+
+  if (photoFile.size > 5 * 1024 * 1024) {
+    showError("La foto supera il limite di 5 MB.");
+    return;
+  }
+
+  const catName = nameInput?.value?.trim() || "";
+
+  if (catName.length < 1 || catName.length > 50) {
+    showError("Il nome del gatto deve contenere da 1 a 50 caratteri.");
+    return;
+  }
+
+  uploadButton.disabled = true;
+  uploadButton.textContent = "Caricamento...";
 
   try {
+    // 1. Carica l'immagine sul servizio esterno.
     const formData = new FormData();
-    formData.append("image", photoInput.files[0]);
+    formData.append("image", photoFile);
 
-    const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-      method: "POST", body: formData
-    });
-    const result = await response.json();
-
-    if (!result.success) throw new Error("Errore durante il caricamento dell'immagine.");
-
-    const imageUrl = result.data.url;
-    const now = new Date();
-
-    const newCatRef = push(ref(db, 'cats'));
-    await update(newCatRef, {
-      author: currentUser.username,
-      catName: catName,
-      imageUrl: imageUrl,
-      createdAt: Date.now(),
-      date: now.toLocaleDateString('it-IT'),
-      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    });
-
-    if (!currentUser.badges) currentUser.badges = {};
-
-    let unlockedSecret = false;
-    const rules = [
-      { key: 'pelata', words: ['pelata', 'pelato', 'sfinge', 'sphynx', 'calvo', 'gatito'] },
-      { key: 'maranza', words: ['maranza', 'tuta', 'tn'] },
-      { key: 'police', words: ['poliziotto', 'sbirro', 'agente'] },
-      { key: 'marescialla', words: ['marescialla', 'poliziotta'] },
-      { key: 'pizza', words: ['pizza', 'margherita', 'pizzaiolo'] },
-      { key: 'space', words: ['spazio', 'astro', 'alieno', 'ufo'] },
-      { key: 'ninja', words: ['ninja', 'shinobi', 'ombra'] },
-      { key: 'wizard', words: ['mago', 'wizard', 'magia', 'merlino'] },
-      { key: 'royal', words: ['re', 'regina', 'principe', 'principessa'] },
-      { key: 'pirate', words: ['pirata', 'ciurma', 'tesoro'] },
-      { key: 'rocker', words: ['rock', 'metal', 'chitarra'] },
-      { key: 'chef', words: ['chef', 'cucina', 'cuoco'] },
-      { key: 'hero', words: ['hero', 'superman', 'batman', 'eroe'] },
-      { key: 'hacker', words: ['hacker', 'code', 'cyber'] },
-      { key: 'detective', words: ['sherlock', 'detective', 'spia'] },
-      { key: 'vampire', words: ['vampiro', 'dracula', 'frenk'] },
-      { key: 'ghost', words: ['fantasma', 'ghost', 'spettro'] },
-      { key: 'zombie', words: ['zombie', 'nonmorto'] },
-      { key: 'soccer', words: ['gol', 'calcio', 'pallone', 'inter', 'milan', 'juve'] },
-      { key: 'artist', words: ['arte', 'pittore', 'picasso'] },
-      { key: 'gamer', words: ['gamer', 'play', 'xbox', 'gaming'] }
-    ];
-
-    rules.forEach(rule => {
-      if (rule.words.some(w => n.includes(w))) {
-        currentUser.badges[rule.key] = true;
-        unlockedSecret = true;
+    const response = await fetch(
+      `https://api.imgbb.com/1/upload?key=${encodeURIComponent(IMGBB_API_KEY)}`,
+      {
+        method: "POST",
+        body: formData
       }
-    });
+    );
 
-    currentUser.catsFound = (currentUser.catsFound || 0) + 1;
-    currentUser.xp = (currentUser.xp || 0) + 100;
-    setCurrentUser(currentUser);
+    const result = await response.json().catch(() => null);
 
-    await update(ref(db, `users/${currentUser.id}`), {
-      xp: currentUser.xp,
-      catsFound: currentUser.catsFound,
-      badges: currentUser.badges
-    });
-
-    confetti({ particleCount: unlockedSecret ? 120 : 50, spread: 70, origin: { y: 0.6 } });
-    updateUI();
-
-    if (unlockedSecret) {
-      await sendNativeNotification("🏆 Badge Segreto Sbloccato!", `Hai sbloccato un badge speciale con ${catName}!`, imageUrl);
-    } else {
-      await sendNativeNotification("📸 Gatto Registrato!", `Hai aggiunto ${catName}! +100 XP guadagnati.`, imageUrl);
+    if (!response.ok || !result?.success || !result?.data?.url) {
+      throw new Error("Il servizio immagini non ha accettato il file.");
     }
 
-    nameInput.value = '';
-    photoInput.value = '';
+    const imageUrl = result.data.url;
 
-    setTimeout(() => {
-      window.location.href = '../feed/feed.html';
-    }, 1000);
+    // 2. Scrive il post nel percorso previsto dalle regole RTDB.
+    const sightingRef = push(ref(db, "sightings"));
 
-  } catch (err) {
-    alert("Errore caricamento: " + err.message);
+    await set(sightingRef, {
+      userId: auth.currentUser.uid,
+      catName,
+      photo: imageUrl,
+      description: "",
+      createdAt: Date.now()
+    });
+
+    // Non aggiorniamo XP o badge dal browser:
+    // questi dati possono essere manipolati dal client.
+    // Per assegnarli in modo sicuro serve una Cloud Function
+    // o un altro backend con privilegi controllati.
+
+    if (typeof confetti === "function") {
+      confetti({
+        particleCount: 60,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+
+    await sendNativeNotification(
+      "📸 Gatto registrato!",
+      `Hai aggiunto ${catName}!`
+    );
+
+    nameInput.value = "";
+    photoInput.value = "";
+
+    alert("Gatto caricato correttamente!");
+
+    window.location.href = "../feed/feed.html";
+  } catch (error) {
+    console.error("Errore caricamento MeowGo:", error);
+
+    const message = String(error?.message || "");
+
+    if (
+      message.includes("PERMISSION_DENIED") ||
+      message.includes("permission_denied")
+    ) {
+      showError(
+        "Firebase ha negato il salvataggio. Verifica che le regole permettano " +
+        "a un utente autenticato di creare sightings/{id}, che userId corrisponda " +
+        "alla UID Firebase e che i campi inviati siano ammessi."
+      );
+    } else {
+      showError("Errore durante il caricamento: " + message);
+    }
   } finally {
-    uploadBtn.disabled = false;
-    uploadBtn.innerHTML = `🌿 Carica Gatto`;
+    if (uploadButton) {
+      uploadButton.disabled = false;
+      uploadButton.textContent = "🌿 Carica Gatto";
+    }
   }
 });
 
+// ------------------------------
+// LIVELLO, XP E BADGE VISUALI
+// ------------------------------
+
 function updateUI() {
   if (!currentUser) return;
-  const xp = currentUser.xp || 0;
-  const catsFound = currentUser.catsFound || 0;
+
+  const xp = Number(currentUser.xp || 0);
+  const catsFound = Number(currentUser.catsFound || 0);
   const level = Math.floor(xp / 1000) + 1;
-  const b = currentUser.badges || {};
+  const badges = currentUser.badges || {};
 
-  document.getElementById('user-level').innerText = level;
-  document.getElementById('user-xp').innerText = xp % 1000;
-  document.getElementById('xp-bar').style.width = `${(xp % 1000) / 10}%`;
+  const levelElement = document.getElementById("user-level");
+  const xpElement = document.getElementById("user-xp");
+  const barElement = document.getElementById("xp-bar");
 
-  document.getElementById('badge-first').classList.toggle('unlocked', catsFound >= 1);
-  document.getElementById('badge-hunter').classList.toggle('unlocked', catsFound >= 5);
-  document.getElementById('badge-master').classList.toggle('unlocked', catsFound >= 10);
-  document.getElementById('badge-lvl2').classList.toggle('unlocked', level >= 2);
+  if (levelElement) levelElement.textContent = level;
+  if (xpElement) xpElement.textContent = xp % 1000;
+  if (barElement) barElement.style.width = `${(xp % 1000) / 10}%`;
 
-  const badgeKeys = ['pelata', 'maranza', 'police', 'marescialla', 'pizza', 'space', 'ninja', 'wizard', 'royal', 'pirate', 'rocker', 'chef', 'hero', 'hacker', 'detective', 'vampire', 'ghost', 'zombie', 'soccer', 'artist', 'gamer'];
-  let countUnlockedSecrets = 0;
+  document.getElementById("badge-first")
+    ?.classList.toggle("unlocked", catsFound >= 1);
 
-  badgeKeys.forEach(k => {
-    const colEl = document.getElementById(`col-badge-${k}`);
-    if (colEl) {
-      const isUnlocked = !!b[k];
-      colEl.classList.toggle('unlocked', isUnlocked);
-      if (isUnlocked) countUnlockedSecrets++;
-    }
+  document.getElementById("badge-hunter")
+    ?.classList.toggle("unlocked", catsFound >= 5);
+
+  document.getElementById("badge-master")
+    ?.classList.toggle("unlocked", catsFound >= 10);
+
+  document.getElementById("badge-lvl2")
+    ?.classList.toggle("unlocked", level >= 2);
+
+  const badgeKeys = [
+    "pelata", "maranza", "police", "marescialla", "pizza",
+    "space", "ninja", "wizard", "royal", "pirate", "rocker",
+    "chef", "hero", "hacker", "detective", "vampire",
+    "ghost", "zombie", "soccer", "artist", "gamer"
+  ];
+
+  let unlockedCount = 0;
+
+  badgeKeys.forEach(key => {
+    const element = document.getElementById(`col-badge-${key}`);
+    if (!element) return;
+
+    const unlocked = badges[key] === true;
+    element.classList.toggle("unlocked", unlocked);
+
+    if (unlocked) unlockedCount++;
   });
 
-  const secretSection = document.getElementById('secret-badges-section');
+  const secretSection = document.getElementById("secret-badges-section");
+
   if (secretSection) {
-    if (countUnlockedSecrets > 0) {
-      secretSection.classList.remove('d-none');
-    } else {
-      secretSection.classList.add('d-none');
-    }
+    secretSection.classList.toggle("d-none", unlockedCount === 0);
   }
 }
