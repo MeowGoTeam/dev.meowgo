@@ -1,0 +1,118 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "admins": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      ".write": false
+    },
+
+    "bans": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+        ".validate": "newData.hasChildren(['until'])",
+        "until": { ".validate": "newData.isString()" },
+        "reason": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "users": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['username', 'xp', 'catsFound'])",
+        "username": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_ .-]{2,30}$/)"
+        },
+        "xp": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= (data.exists() ? data.val() + 500 : 0)"
+        },
+        "catsFound": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= (data.exists() ? data.val() + 50 : 0)"
+        },
+        "badges": {
+          "$badge": { ".validate": "newData.isBoolean() || newData.isNumber() || newData.isString()" }
+        },
+        "bio": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "photoURL": { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "avatarUrl": { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "fcmToken": { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "private": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "email": { ".validate": "newData.isString() && newData.val().length <= 254" },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "notifications": {
+      "global": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+        ".indexOn": ["timestamp"]
+      },
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
+        ".indexOn": ["timestamp"]
+      }
+    },
+
+    "content": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
+    },
+
+    "sightings": {
+      ".read": "auth != null",
+      ".indexOn": ["createdAt", "userId"],
+      "$id": {
+        ".write": "auth != null && !root.child('bans').child(auth.uid).exists() && ((!data.exists() && newData.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val() === auth.uid) || root.child('admins').child(auth.uid).val() === true)",
+        ".validate": "newData.hasChildren(['userId', 'createdAt'])",
+        "userId": { ".validate": "newData.isString() && (data.exists() ? newData.val() === data.val() : newData.val() === auth.uid)" },
+        "author": { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "photo": { ".validate": "newData.isString() && newData.val().length < 1000000" },
+        "imageUrl": { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "description": { ".validate": "newData.isString() && newData.val().length <= 300" },
+        "catName": { ".validate": "newData.isString() && newData.val().length <= 50" },
+        "date": { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "time": { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "createdAt": { ".validate": "newData.isNumber()" },
+        "deleted": { ".validate": "newData.isBoolean()" },
+        "likes": {
+          "$likeUid": {
+            ".write": "auth != null && auth.uid === $likeUid && !root.child('bans').child(auth.uid).exists()",
+            ".validate": "newData.val() === true"
+          }
+        },
+        "comments": {
+          "$cid": {
+            ".write": "auth != null && !root.child('bans').child(auth.uid).exists() && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && data.child('uid').val() === auth.uid) || root.child('admins').child(auth.uid).val() === true)",
+            ".validate": "newData.hasChildren(['uid', 'author', 'text', 'createdAt']) && newData.child('text').isString() && newData.child('text').val().length <= 300",
+            "uid": { ".validate": "newData.isString()" },
+            "author": { ".validate": "newData.isString() && newData.val().length <= 30" },
+            "text": { ".validate": "newData.isString()" },
+            "createdAt": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "gardens": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $uid && !root.child('bans').child(auth.uid).exists()"
+      }
+    }
+  }
+}
