@@ -224,10 +224,47 @@ async function loadCloudflareAnalytics(){
  const user=auth.currentUser;if(!user){cfSetStatus('Sessione Firebase non disponibile.','error');return}
  cfSetStatus('Caricamento statistiche Cloudflare…');
  try{
-   const idToken=await getIdToken(user,true);
-   const response=await fetch(CF_WORKER_URL.replace(/\/$/,'')+'/analytics?period='+encodeURIComponent(cfPeriod),{headers:{Authorization:'Bearer '+idToken}});
-   const data=await response.json().catch(()=>({error:'Risposta non valida dal Worker'}));
-   if(!response.ok)throw new Error(data.error||('HTTP '+response.status));
+  const idToken = await getIdToken(user, true);
+
+const response = await fetch(
+  CF_WORKER_URL.replace(/\/$/, '') +
+  '/analytics?range=' + encodeURIComponent(cfPeriod),
+  {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer ' + idToken,
+      'Accept': 'application/json'
+    }
+  }
+);
+
+const responseText = await response.text();
+
+let data;
+
+try {
+  data = JSON.parse(responseText);
+} catch {
+  throw new Error(
+    'Risposta non JSON dal Worker (HTTP ' +
+    response.status + '): ' +
+    responseText.slice(0, 500)
+  );
+}
+
+if (!response.ok) {
+  throw new Error(
+    'Worker HTTP ' + response.status + ': ' +
+    (data.error || data.message || responseText)
+  );
+}
+
+if (!data.totals || !Array.isArray(data.series)) {
+  throw new Error(
+    'Formato risposta Worker non valido: ' +
+    JSON.stringify(data).slice(0, 500)
+  );
+}
    $('cfUniques').textContent=cfFmt(data.totals?.uniques);
    $('cfRequests').textContent=cfFmt(data.totals?.requests);
    $('cfBandwidth').textContent=cfBytes(data.totals?.bytes);
