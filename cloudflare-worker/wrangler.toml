@@ -1,8 +1,0 @@
-name = "meowgo-analytics"
-main = "src/index.js"
-compatibility_date = "2026-11-11"
-
-[vars]
-CF_ZONE_ID = "686bf022139ec88acdb533b6c64bc617"
-ADMIN_UID = "A2rSgGOIbKSZ4hhZwYwvXzAHsbj1"
-ALLOWED_ORIGIN = "https://dev.meowgo.it"
