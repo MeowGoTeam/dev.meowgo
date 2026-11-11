@@ -1,5 +1,6 @@
 
 const FIREBASE_PROJECT_ID = "ogwoem";
+
 const FIREBASE_DATABASE_URL =
   "https://ogwoem-default-rtdb.europe-west1.firebasedatabase.app";
 
@@ -43,15 +44,23 @@ function base64UrlToBytes(value) {
     .replace(/-/g, "+")
     .replace(/_/g, "/");
 
-  const padded = base64 + "=".repeat((4 - base64.length % 4) % 4);
+  const padded =
+    base64 + "=".repeat((4 - base64.length % 4) % 4);
+
   const binary = atob(padded);
 
-  return Uint8Array.from(binary, c => c.charCodeAt(0));
+  return Uint8Array.from(
+    binary,
+    c => c.charCodeAt(0)
+  );
 }
 
 function decodeJwtPart(value) {
   const bytes = base64UrlToBytes(value);
-  return JSON.parse(new TextDecoder().decode(bytes));
+
+  return JSON.parse(
+    new TextDecoder().decode(bytes)
+  );
 }
 
 async function getFirebaseJwks() {
@@ -62,13 +71,17 @@ async function getFirebaseJwks() {
   const response = await fetch(FIREBASE_JWKS_URL);
 
   if (!response.ok) {
-    throw new Error("Impossibile recuperare le chiavi Firebase.");
+    throw new Error(
+      "Impossibile recuperare le chiavi Firebase."
+    );
   }
 
   const data = await response.json();
 
   if (!Array.isArray(data.keys) || data.keys.length === 0) {
-    throw new Error("Chiavi pubbliche Firebase non valide.");
+    throw new Error(
+      "Chiavi pubbliche Firebase non valide."
+    );
   }
 
   cachedJwks = data.keys;
@@ -99,18 +112,26 @@ async function verifyFirebaseToken(token) {
   }
 
   if (header.alg !== "RS256" || !header.kid) {
-    throw new Error("Algoritmo del token non supportato.");
+    throw new Error(
+      "Algoritmo del token non supportato."
+    );
   }
 
   const now = Math.floor(Date.now() / 1000);
 
   if (payload.aud !== FIREBASE_PROJECT_ID) {
-    throw new Error("Token appartenente a un progetto Firebase diverso.");
+    throw new Error(
+      "Token appartenente a un progetto Firebase diverso."
+    );
   }
 
-  if (payload.iss !==
-      `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`) {
-    throw new Error("Emittente del token Firebase non valido.");
+  if (
+    payload.iss !==
+    `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`
+  ) {
+    throw new Error(
+      "Emittente del token Firebase non valido."
+    );
   }
 
   if (!payload.sub || typeof payload.sub !== "string") {
@@ -126,21 +147,30 @@ async function verifyFirebaseToken(token) {
   }
 
   if (!payload.iat || payload.iat > now + 60) {
-    throw new Error("Data di emissione del token non valida.");
+    throw new Error(
+      "Data di emissione del token non valida."
+    );
   }
 
   if (payload.auth_time && payload.auth_time > now + 60) {
-    throw new Error("Autenticazione Firebase non valida.");
+    throw new Error(
+      "Autenticazione Firebase non valida."
+    );
   }
 
   const keys = await getFirebaseJwks();
-  const jwk = keys.find(key => key.kid === header.kid);
+
+  const jwk = keys.find(
+    key => key.kid === header.kid
+  );
 
   if (!jwk) {
     cachedJwks = null;
     jwksExpiresAt = 0;
 
-    throw new Error("Chiave di firma Firebase non trovata.");
+    throw new Error(
+      "Chiave di firma Firebase non trovata."
+    );
   }
 
   const publicKey = await crypto.subtle.importKey(
@@ -155,6 +185,7 @@ async function verifyFirebaseToken(token) {
   );
 
   const signature = base64UrlToBytes(parts[2]);
+
   const signedData = new TextEncoder().encode(
     `${parts[0]}.${parts[1]}`
   );
@@ -167,7 +198,9 @@ async function verifyFirebaseToken(token) {
   );
 
   if (!valid) {
-    throw new Error("Firma del token Firebase non valida.");
+    throw new Error(
+      "Firma del token Firebase non valida."
+    );
   }
 
   return payload;
@@ -194,7 +227,9 @@ async function verifyAdmin(uid, token) {
   const isAdmin = await response.json();
 
   if (isAdmin !== true) {
-    throw new Error("Accesso negato: utente non amministratore.");
+    throw new Error(
+      "Accesso negato: utente non amministratore."
+    );
   }
 
   return true;
@@ -212,7 +247,9 @@ function getPeriodRange(period) {
   const days = ranges[period];
 
   if (!days) {
-    throw new Error("Intervallo temporale non valido.");
+    throw new Error(
+      "Intervallo temporale non valido."
+    );
   }
 
   const from = new Date(
@@ -228,14 +265,18 @@ function getPeriodRange(period) {
 
 async function fetchCloudflareAnalytics(env, range) {
   if (!env.CF_API_TOKEN) {
-    throw new Error("Secret CF_API_TOKEN non configurato.");
+    throw new Error(
+      "Secret CF_API_TOKEN non configurato."
+    );
   }
 
   if (!env.CF_ZONE_ID) {
-    throw new Error("Variabile CF_ZONE_ID non configurata.");
+    throw new Error(
+      "Variabile CF_ZONE_ID non configurata."
+    );
   }
 
-  const { from, to, days } = getPeriodRange(range);
+  const { from, to } = getPeriodRange(range);
 
   const query = `
     query ZoneAnalytics(
@@ -260,10 +301,6 @@ async function fetchCloudflareAnalytics(env, range) {
               requests
               bytes
               threats
-              countryMap {
-                clientCountryName
-                requests
-              }
               responseStatusMap {
                 edgeResponseStatus
                 requests
@@ -278,22 +315,25 @@ async function fetchCloudflareAnalytics(env, range) {
     }
   `;
 
-  const response = await fetch(CLOUDFLARE_GRAPHQL_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${env.CF_API_TOKEN}`,
-      "Content-Type": "application/json",
-      "Accept": "application/json"
-    },
-    body: JSON.stringify({
-      query,
-      variables: {
-        zoneTag: env.CF_ZONE_ID,
-        start: from,
-        end: to
-      }
-    })
-  });
+  const response = await fetch(
+    CLOUDFLARE_GRAPHQL_URL,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.CF_API_TOKEN}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({
+        query,
+        variables: {
+          zoneTag: env.CF_ZONE_ID,
+          start: from,
+          end: to
+        }
+      })
+    }
+  );
 
   const result = await response.json().catch(() => null);
 
@@ -304,7 +344,9 @@ async function fetchCloudflareAnalytics(env, range) {
   }
 
   if (!result) {
-    throw new Error("Risposta Cloudflare non valida.");
+    throw new Error(
+      "Risposta Cloudflare non valida."
+    );
   }
 
   if (result.errors?.length) {
@@ -328,7 +370,9 @@ async function fetchCloudflareAnalytics(env, range) {
   const groups = zones[0].httpRequests1hGroups;
 
   if (!Array.isArray(groups)) {
-    throw new Error("Dati Analytics non disponibili.");
+    throw new Error(
+      "Dati Analytics non disponibili."
+    );
   }
 
   const totals = {
@@ -338,7 +382,6 @@ async function fetchCloudflareAnalytics(env, range) {
     uniques: 0
   };
 
-  const countriesMap = new Map();
   const statusesMap = new Map();
 
   const series = groups.map(group => {
@@ -353,19 +396,9 @@ async function fetchCloudflareAnalytics(env, range) {
     totals.bytes += bytes;
     totals.threats += threats;
 
-    // È la somma degli unici per ora, non un conteggio
-    // deduplicato sull'intero intervallo.
+    // Somma degli unici orari: non rappresenta
+    // visitatori distinti nell'intero intervallo.
     totals.uniques += uniques;
-
-    for (const country of sum.countryMap || []) {
-      const name = country.clientCountryName || "Sconosciuto";
-
-      countriesMap.set(
-        name,
-        (countriesMap.get(name) || 0) +
-          Number(country.requests || 0)
-      );
-    }
 
     for (const status of sum.responseStatusMap || []) {
       const code = String(
@@ -385,14 +418,6 @@ async function fetchCloudflareAnalytics(env, range) {
     };
   });
 
-  const countries = Array.from(countriesMap.entries())
-    .map(([country, requests]) => ({
-      country,
-      requests
-    }))
-    .sort((a, b) => b.requests - a.requests)
-    .slice(0, 10);
-
   const statuses = Array.from(statusesMap.entries())
     .map(([status, requests]) => ({
       status,
@@ -406,7 +431,7 @@ async function fetchCloudflareAnalytics(env, range) {
     generatedAt: new Date().toISOString(),
     totals,
     series,
-    countries,
+    countries: [],
     statuses
   };
 }
@@ -438,10 +463,14 @@ export default {
     }
 
     if (url.pathname === "/health") {
-      return json({
-        status: "online",
-        service: "MeowGo Analytics API"
-      }, 200, origin || "");
+      return json(
+        {
+          status: "online",
+          service: "MeowGo Analytics API"
+        },
+        200,
+        origin || ""
+      );
     }
 
     if (!origin) {
@@ -517,9 +546,11 @@ export default {
           ? error.message
           : "Errore interno del server.";
 
-      return json({
-        error: message
-      }, 500, origin);
+      return json(
+        { error: message },
+        500,
+        origin
+      );
     }
   }
 };
