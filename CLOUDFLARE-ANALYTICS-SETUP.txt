@@ -1,1 +1,0 @@
-Integrazione Cloudflare Analytics aggiunta. Leggi cloudflare-worker/README.md prima del deploy. Il sito resta funzionante anche finché CF_WORKER_URL non viene configurato.
