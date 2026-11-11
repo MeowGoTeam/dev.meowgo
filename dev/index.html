@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MeowGo — Developer Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root{--rail:#cbd4dc;--panel:#cbd4dc;--ink:#101418;--muted:#59636c;--blue:#397cff;--bg:#f7f9fb;--white:#fff;--line:#e3e8ed;--red:#d94c4c;--green:#23845b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:100vh}.rail{position:fixed;inset:0 auto 0 0;width:72px;background:var(--rail);display:flex;align-items:center;flex-direction:column;padding:15px 0;gap:15px;z-index:10}.brand{width:42px;height:42px;border-radius:50%;object-fit:cover;margin-bottom:24px;background:white}.navbtn{width:46px;height:46px;border:0;background:transparent;color:#58616a;border-radius:10px;font-size:20px;display:grid;place-items:center;transition:.2s}.navbtn:hover,.navbtn.active{background:#fff;color:#111;box-shadow:0 2px 8px #00000012}.rail-spacer{flex:1}.main{margin-left:72px;padding:30px 34px 40px;max-width:1700px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:28px}.heading{font-size:clamp(26px,3vw,40px);font-weight:800;letter-spacing:-1.3px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:6px}.profile-pill{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid var(--line);padding:8px 13px;border-radius:14px}.profile-pill img{width:36px;height:36px;border-radius:50%;object-fit:cover}.profile-pill strong{font-size:12px;display:block}.profile-pill small{font-size:10px;color:var(--muted)}.page{display:none}.page.active{display:block}.hero{background:var(--panel);border-radius:30px;padding:26px 30px;display:flex;align-items:center;gap:25px;margin-bottom:24px;min-height:150px}.hero img{width:112px;height:112px;border-radius:50%;object-fit:cover;background:#fff}.hero h2{font-size:clamp(26px,3vw,40px);margin:0 0 12px;font-weight:800;letter-spacing:-1px}.hero-meta{display:grid;grid-template-columns:repeat(2,minmax(150px,1fr));gap:12px 45px;font-size:13px;font-weight:700}.hero-meta span{color:#505b64;font-weight:500;margin-left:7px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-bottom:22px}.stat,.panel{background:var(--panel);padding:21px 23px;border-radius:3px}.stat label{font-size:12px;font-weight:700;color:#38434c}.stat strong{font-size:30px;display:block;margin-top:12px;letter-spacing:-1px}.stat small{font-size:11px;color:#56616b}.dashboard-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(250px,.85fr);gap:22px}.panel h3{margin:0 0 18px;font-size:18px;font-weight:800}.chart-placeholder{height:235px;display:flex;align-items:center;justify-content:center;border:1px dashed #aab5bf;color:#58636c;font-size:13px;text-align:center;padding:20px}.quick-list{display:grid;gap:13px}.quick-row{display:flex;justify-content:space-between;font-size:13px;font-weight:600}.quick-row span:last-child{font-weight:800}.section-head{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:10px 0 20px}.section-head h2{font-size:25px;margin:0;font-weight:800}.toolbar{display:flex;gap:9px;flex-wrap:wrap}.field{border:1px solid #b9c3cc;background:#fff;border-radius:8px;padding:10px 12px;min-width:180px;outline:none;color:#17202a}.field:focus{border-color:var(--blue);box-shadow:0 0 0 3px #397cff1c}.btn{border:0;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;background:#111820;color:#fff}.btn.secondary{background:#fff;color:#18212a;border:1px solid #b9c3cc}.btn.danger{background:var(--red)}.btn.blue{background:var(--blue)}.table-wrap{overflow:auto;background:var(--panel);padding:16px 20px}table{border-collapse:collapse;width:100%;min-width:620px;text-align:left}th{font-size:11px;color:#56616b;text-transform:uppercase;letter-spacing:.5px;padding:12px;border-bottom:1px solid #aeb9c2}td{padding:13px 12px;border-bottom:1px solid #b5c0c9;font-size:13px}tr:last-child td{border-bottom:0}.user-cell{font-weight:700}.muted{color:#65717b}.status{display:inline-block;border-radius:20px;padding:5px 9px;font-size:10px;font-weight:800;background:#e0f3e9;color:#176b45}.status.banned{background:#f9e1e1;color:#a52e2e}.empty{padding:30px;text-align:center;color:#58636c;font-size:13px}.notice{padding:13px 15px;background:#fff4d7;border-left:4px solid #d69b21;color:#6f5414;font-size:12px;line-height:1.6;margin-bottom:18px}.notice.error{background:#fdeaea;border-color:#d94c4c;color:#842d2d}.notice.ok{background:#e4f5eb;border-color:#23845b;color:#176b45}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.form-grid .full{grid-column:1/-1}textarea.field{min-height:105px;resize:vertical}.post-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:15px}.post-card{background:var(--panel);padding:12px}.post-card img{width:100%;height:155px;object-fit:cover;background:#e5e9ed}.post-card strong{display:block;font-size:13px;margin:10px 0 4px}.post-card p{font-size:12px;color:#56616b;margin:0 0 8px}.post-card small{font-size:10px;color:#56616b}.split{display:grid;grid-template-columns:1.1fr .9fr;gap:20px}.log{font-size:12px;line-height:1.8;color:#4f5b65;overflow-wrap:anywhere}.hidden{display:none!important}.mobile-label{display:none}
+@media(max-width:900px){.main{padding:22px 20px}.stats{grid-template-columns:repeat(2,1fr)}.dashboard-grid,.split{grid-template-columns:1fr}.hero-meta{gap:9px 20px}}
+@media(max-width:600px){.rail{width:100%;height:64px;inset:auto 0 0;flex-direction:row;justify-content:space-around;padding:6px 8px;gap:2px}.brand{width:35px;height:35px;margin:0}.navbtn{width:42px;height:42px;font-size:17px}.rail-spacer{display:none}.main{margin:0;padding:18px 14px 85px}.topbar{align-items:flex-start}.profile-pill{padding:6px}.profile-pill div{display:none}.heading{font-size:25px}.hero{padding:18px;gap:14px;border-radius:20px}.hero img{width:72px;height:72px}.hero h2{font-size:22px}.hero-meta{grid-template-columns:1fr;font-size:11px}.stats{gap:10px}.stat{padding:15px}.stat strong{font-size:25px}.section-head{align-items:flex-start;flex-direction:column}.toolbar{width:100%}.field{min-width:0;flex:1}.form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.table-wrap{padding:10px}.mobile-label{display:inline}}
+
+.auth-gate{position:fixed;inset:0;background:rgba(18,25,32,.62);backdrop-filter:blur(5px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.auth-gate.show{display:flex}.auth-card{width:min(430px,100%);background:#fff;border-radius:18px;padding:26px;box-shadow:0 24px 80px #0003}
+.auth-card h2{margin:0 0 8px;font-size:23px}.auth-card p{font-size:13px;color:#59636c;line-height:1.6}
+.auth-card label{display:block;font-size:12px;font-weight:700;margin:14px 0 6px}.auth-card input{width:100%;min-width:0}
+.auth-error{display:none;background:#fdeaea;color:#842d2d;border-left:4px solid #d94c4c;padding:10px 12px;margin-top:13px;font-size:12px;line-height:1.5}
+.auth-error.show{display:block}.auth-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
+
+
+.cf-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 14px;flex-wrap:wrap}
+.cf-periods{display:flex;gap:7px;flex-wrap:wrap}.cf-period.active{background:#e8efff;border-color:#b9ccff;color:#245fd1}
+.cf-status{font-size:12px;color:var(--muted);margin:0 0 14px}.cf-status.error{color:var(--red)}.cf-status.ok{color:var(--green)}
+.cf-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
+.cf-metric{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:13px}
+.cf-metric span{display:block;font-size:10px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:7px}
+.cf-metric strong{font-size:22px;font-weight:800}
+.cf-chart-wrap{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fff}
+.cf-chart-heading{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:14px;font-size:13px}
+.cf-chart-heading small{color:var(--muted);font-size:11px}
+.cf-chart{height:150px;display:flex;align-items:end;gap:5px;padding:8px 2px 0;border-bottom:1px solid var(--line)}
+.cf-bar-group{flex:1;min-width:0;height:100%;display:flex;align-items:end;justify-content:center;position:relative}
+.cf-bar{width:min(100%,26px);min-height:3px;background:#397cff;border-radius:4px 4px 0 0;position:relative}
+.cf-bar:hover{background:#245fd1}.cf-bar-label{position:absolute;bottom:-19px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--muted);white-space:nowrap}
+.cf-empty{font-size:12px;color:var(--muted);margin:auto;align-self:center}
+.cf-breakdowns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:15px}
+.cf-breakdowns h4{font-size:10px;letter-spacing:.06em;color:var(--muted);margin:0 0 8px}
+.cf-list{display:grid;gap:7px}.cf-list-row{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:7px 9px;background:#f8fafc;border-radius:7px}
+@media(max-width:760px){.cf-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.cf-breakdowns{grid-template-columns:1fr}.cf-chart{gap:2px}}
+
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="rail" aria-label="Navigazione">
+<img class="brand" src="https://i.ibb.co/6JvfGf4T/icon-192.jpg" alt="MeowGo">
+<button class="navbtn active" data-page="overview" title="Admin dashboard"><i class="fa-solid fa-user-gear"></i></button>
+<button class="navbtn" data-page="database" title="Database"><i class="fa-solid fa-database"></i></button>
+<button class="navbtn" data-page="preview" title="Preview"><i class="fa-solid fa-eye"></i></button>
+<button class="navbtn" data-page="reports" title="Centro segnalazioni"><i class="fa-solid fa-bell"></i></button>
+<div class="rail-spacer"></div>
+<button class="navbtn" id="logoutBtn" title="Esci"><i class="fa-solid fa-right-from-bracket"></i></button>
+</aside>
+<main class="main">
+<header class="topbar">
+<div><h1 class="heading" id="pageTitle">ADMIN DASHBOARD</h1><div class="sub">MeowGo Developer Environment · Console amministrativa</div></div>
+<div class="profile-pill"><img id="avatar" src="https://i.ibb.co/6JvfGf4T/icon-192.jpg" alt=""><div><strong id="devName">Developer</strong><small id="devEmail">Sessione SSO</small></div></div>
+</header>
+
+<section class="page active" id="page-overview">
+<div class="hero"><img src="https://i.ibb.co/6JvfGf4T/icon-192.jpg" alt="MeowGo"><div><h2>ADMIN DASHBOARD</h2><div class="hero-meta"><div>AMBIENTE <span>Produzione / Dev</span></div><div>STATO <span id="connectionState">Connessione in verifica</span></div><div>PROGETTO <span>ogwoem</span></div><div>ACCESSO <span>Developer SSO</span></div></div></div></div>
+<div id="globalNotice" class="notice">Verifica della sessione e delle autorizzazioni Firebase in corso…</div>
+<div class="stats">
+<div class="stat"><label>UTENTI REGISTRATI</label><strong id="statUsers">—</strong><small>Profili nel nodo users</small></div>
+<div class="stat"><label>POST PUBBLICATI</label><strong id="statPosts">—</strong><small>Contenuti in sightings</small></div>
+<div class="stat"><label>ACCOUNT BANNATI</label><strong id="statBans">—</strong><small>Bloccati / sospesi</small></div>
+<div class="stat"><label>NOTIFICHE GLOBALI</label><strong id="statNotifs">—</strong><small>Nel nodo notifications/global</small></div>
+</div>
+<div class="dashboard-grid">
+<div class="panel"><h3>ATTIVITÀ DELLA PIATTAFORMA</h3>
+<div class="cf-toolbar">
+  <div class="cf-periods" role="group" aria-label="Intervallo statistiche">
+    <button class="btn secondary cf-period active" data-cf-period="24h">24 ore</button>
+    <button class="btn secondary cf-period" data-cf-period="7d">7 giorni</button>
+    <button class="btn secondary cf-period" data-cf-period="30d">30 giorni</button>
+  </div>
+  <button class="btn secondary" id="cfRefresh"><i class="fa-solid fa-rotate"></i> Aggiorna</button>
+</div>
+<div id="cfStatus" class="cf-status">Statistiche Cloudflare non ancora caricate.</div>
+<div class="cf-metrics" id="cfMetrics">
+  <div class="cf-metric"><span>VISITE UNICHE</span><strong id="cfUniques">—</strong></div>
+  <div class="cf-metric"><span>RICHIESTE</span><strong id="cfRequests">—</strong></div>
+  <div class="cf-metric"><span>BANDA</span><strong id="cfBandwidth">—</strong></div>
+  <div class="cf-metric"><span>MINACCE BLOCCATE</span><strong id="cfThreats">—</strong></div>
+</div>
+<div class="cf-chart-wrap">
+  <div class="cf-chart-heading"><strong>Traffico nel periodo</strong><small id="cfChartCaption">Richieste per intervallo</small></div>
+  <div id="cfChart" class="cf-chart"><div class="cf-empty">Collega il Worker Cloudflare per visualizzare i dati.</div></div>
+</div>
+<div class="cf-breakdowns">
+  <div><h4>PRINCIPALI PAESI</h4><div id="cfCountries" class="cf-list"><span class="cf-empty">—</span></div></div>
+  <div><h4>CODICI HTTP</h4><div id="cfStatuses" class="cf-list"><span class="cf-empty">—</span></div></div>
+</div>
+</div>
+<div class="panel"><h3>ACCESSO RAPIDO</h3><div class="quick-list">
+<div class="quick-row"><span>Gestione utenti</span><button class="btn secondary" data-go="users">Apri</button></div>
+<div class="quick-row"><span>Moderazione post</span><button class="btn secondary" data-go="posts">Apri</button></div>
+<div class="quick-row"><span>Invio notifiche</span><button class="btn secondary" data-go="notifications">Apri</button></div>
+<div class="quick-row"><span>Preview sito</span><button class="btn secondary" data-go="preview">Apri</button></div>
+</div></div>
+</div>
+</section>
+
+<section class="page" id="page-users">
+<div class="section-head"><h2>UTENTI</h2><div class="toolbar"><input class="field" id="userSearch" placeholder="Cerca username o UID"><button class="btn secondary" id="refreshUsers"><i class="fa-solid fa-rotate"></i> Aggiorna</button></div></div>
+<div class="notice">Le email sono dati privati: con le regole Firebase attuali il nodo <code>private/{uid}</code> è leggibile soltanto dal proprietario. Per mostrarle agli admin serve una modifica mirata delle regole.</div>
+<div class="table-wrap"><table><thead><tr><th>Utente</th><th>Email</th><th>UID</th><th>Stato account</th><th>Azioni</th></tr></thead><tbody id="usersTable"><tr><td colspan="5" class="empty">In attesa di autorizzazione Firebase…</td></tr></tbody></table></div>
+</section>
+
+<section class="page" id="page-posts">
+<div class="section-head"><h2>POST / AVVISTAMENTI</h2><div class="toolbar"><input class="field" id="postFilter" placeholder="Filtra per username o UID"><button class="btn secondary" id="refreshPosts"><i class="fa-solid fa-rotate"></i> Aggiorna</button></div></div>
+<div id="postsGrid" class="post-grid"><div class="empty">I post verranno caricati dopo l'autorizzazione.</div></div>
+</section>
+
+<section class="page" id="page-notifications">
+<div class="section-head"><h2>CENTRO NOTIFICHE</h2></div>
+<div class="split">
+<div class="panel"><h3>NUOVA NOTIFICA</h3><div class="form-grid">
+<div class="full"><label>Destinatari</label><select class="field" id="notifTarget" style="width:100%"><option value="global">Universale — tutti gli account</option><option value="user">Account specifico</option></select></div>
+<div class="full hidden" id="targetUserWrap"><label>UID destinatario</label><input class="field" id="targetUid" placeholder="UID Firebase" style="width:100%"></div>
+<div class="full"><label>Titolo</label><input class="field" id="notifTitle" maxlength="80" placeholder="Titolo notifica" style="width:100%"></div>
+<div class="full"><label>Messaggio</label><textarea class="field" id="notifBody" maxlength="300" placeholder="Testo della notifica" style="width:100%"></textarea></div>
+<div class="full"><label>Link (facoltativo)</label><input class="field" id="notifUrl" placeholder="./pages/garden/garden.html" style="width:100%"></div>
+<div class="full"><button class="btn blue" id="sendNotif"><i class="fa-solid fa-paper-plane"></i> Invia notifica</button></div>
+</div><p class="muted" style="font-size:11px;line-height:1.6">L'invio scrive in <code>notifications/global</code> oppure <code>notifications/{uid}</code> secondo le regole Firebase.</p></div>
+<div class="panel"><h3>INTEGRAZIONE NOTIFICATION.JSON</h3><p class="log">Nel pacchetto fornito non è presente un file <code>notification.json</code>. L'app attuale legge le notifiche direttamente da Firebase Realtime Database. Per mantenere compatibilità con un eventuale endpoint JSON di meowgo.it occorre conoscerne URL, formato e modalità di pubblicazione: non scriverò su un file remoto inventando un endpoint.</p><div class="notice">Le notifiche inviate dal pannello saranno compatibili con il sistema Firebase attuale, non con un ipotetico JSON statico.</div></div>
+</div>
+</section>
+
+<section class="page" id="page-database">
+<div class="section-head"><h2>DATABASE</h2><button class="btn secondary" id="refreshAll"><i class="fa-solid fa-rotate"></i> Aggiorna dati</button></div>
+<div class="stats">
+<div class="stat"><label>USERS</label><strong id="dbUsers">—</strong></div><div class="stat"><label>SIGHTINGS</label><strong id="dbPosts">—</strong></div><div class="stat"><label>BANS</label><strong id="dbBans">—</strong></div><div class="stat"><label>NOTIFICATIONS</label><strong id="dbNotifs">—</strong></div>
+</div>
+<div class="panel"><h3>STATO CONNESSIONE</h3><div class="log" id="dbLog">Attendo sessione Firebase Authentication…</div></div>
+</section>
+
+<section class="page" id="page-preview">
+<div class="section-head"><h2>PREVIEW</h2><a class="btn secondary" href="./sidebar/dev/preview/" target="_blank" rel="noopener">Apri ambiente preview <i class="fa-solid fa-arrow-up-right-from-square"></i></a></div>
+<div class="panel"><h3>AMBIENTE DI TEST</h3><p style="font-size:13px;line-height:1.7">Apri la build beta separata per verificare interfaccia, pagine e flussi dell'app senza modificare questa console.</p><p class="muted" style="font-size:12px">Percorso: <code>sidebar/dev/preview/</code></p></div>
+</section>
+
+<section class="page" id="page-reports">
+<div class="section-head"><h2>CENTRO SEGNALAZIONI</h2><a class="btn secondary" href="./sidebar/joefsdvn.html">Apri gestione segnalazioni <i class="fa-solid fa-arrow-up-right-from-square"></i></a></div>
+<div class="panel"><h3>GESTIONE REPORT</h3><p style="font-size:13px;line-height:1.7">La pagina dedicata alle segnalazioni è mantenuta separata. Il collegamento apre lo strumento già presente nel progetto.</p></div>
+</section>
+</main>
+</div>
+
+<div class="auth-gate" id="authGate" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <form class="auth-card" id="authForm">
+    <h2 id="authTitle">Accesso amministratore</h2>
+    <p>La sessione SSO del portale non autentica automaticamente Firebase. Accedi con l'account MeowGo che hai autorizzato nel nodo <code>admins</code>.</p>
+    <label for="authEmail">Email</label>
+    <input class="field" id="authEmail" type="email" autocomplete="username" required placeholder="admin@meowgo.it">
+    <label for="authPassword">Password</label>
+    <input class="field" id="authPassword" type="password" autocomplete="current-password" required placeholder="Password Firebase">
+    <div class="auth-error" id="authError" role="alert"></div>
+    <div class="auth-actions"><button class="btn blue" id="authSubmit" type="submit">Accedi e verifica</button></div>
+  </form>
+</div>
+
+<script type="module">
+// Firebase dedicato al pannello Admin: non importa il core della Preview.
+import {db,auth} from './assets/js/admin-firebase.js';
+import {ref,get,set,push,remove} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js';
+import {onAuthStateChanged,signOut,signInWithEmailAndPassword} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import {getIdToken} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+
+const $=id=>document.getElementById(id);
+let admin=false, users={}, posts={}, bans={}, notifs={}, privateProfiles={};
+const pages=['overview','users','posts','notifications','database','preview','reports'];
+function notice(msg,type=''){const el=$('globalNotice');el.textContent=msg;el.className='notice '+type}
+function showPage(name){if(!pages.includes(name))return;document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+name));document.querySelectorAll('.navbtn[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===name));$('pageTitle').textContent=({overview:'ADMIN DASHBOARD',users:'GESTIONE UTENTI',posts:'GESTIONE POST',notifications:'CENTRO NOTIFICHE',database:'DATABASE',preview:'PREVIEW',reports:'CENTRO SEGNALAZIONI'})[name];}
+document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.go)));
+function showAuth(message=''){ $('authGate').classList.add('show'); $('authError').textContent=message; $('authError').classList.toggle('show',!!message); }
+function hideAuth(){ $('authGate').classList.remove('show'); $('authError').classList.remove('show'); }
+$('authForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const email=$('authEmail').value.trim(),password=$('authPassword').value;
+  $('authSubmit').disabled=true;$('authSubmit').textContent='Verifica…';
+  try{
+    await signInWithEmailAndPassword(auth,email,password);
+    // onAuthStateChanged verifica l'UID in admins prima di abilitare la console.
+  }catch(err){showAuth(firebaseAuthError(err));}
+  finally{$('authSubmit').disabled=false;$('authSubmit').textContent='Accedi e verifica';}
+});
+function firebaseAuthError(err){
+  const map={'auth/invalid-credential':'Email o password non corretti.','auth/user-not-found':'Account Firebase non trovato.','auth/wrong-password':'Password non corretta.','auth/too-many-requests':'Troppi tentativi. Attendi qualche minuto.','auth/network-request-failed':'Connessione di rete non disponibile.'};
+  return map[err?.code]||('Accesso Firebase non riuscito: '+(err?.message||'errore sconosciuto'));
+}
+$('logoutBtn').addEventListener('click',async()=>{admin=false;try{await signOut(auth)}catch(e){}localStorage.removeItem('meowgo_sso_user');sessionStorage.removeItem('meowgo_sso_authenticated');location.href='../index.html'});
+
+// Cloudflare Analytics: il token Cloudflare resta esclusivamente nel Worker.
+// Configurare l'URL dopo aver pubblicato il Worker (vedi cloudflare-worker/README.md).
+const CF_WORKER_URL = 'https://INSERISCI-NOME-WORKER.ACCOUNT.workers.dev';
+let cfPeriod = '24h';
+const cfFmt = n => new Intl.NumberFormat('it-IT',{notation:'compact',maximumFractionDigits:1}).format(Number(n||0));
+const cfBytes = n => {n=Number(n||0);if(n<1024)return n+' B';const u=['KB','MB','GB','TB'];let i=-1;do{n/=1024;i++}while(n>=1024&&i<u.length-1);return n.toLocaleString('it-IT',{maximumFractionDigits:1})+' '+u[i]};
+function cfSetStatus(message,kind=''){const el=$('cfStatus');if(el){el.textContent=message;el.className='cf-status '+kind}}
+function cfRenderList(id,items,key,value){
+ const el=$(id);if(!el)return;
+ if(!items?.length){el.innerHTML='<span class="cf-empty">Nessun dato nel periodo.</span>';return}
+ el.innerHTML=items.slice(0,6).map(x=>`<div class="cf-list-row"><span>${String(x[key]??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</span><strong>${cfFmt(x[value])}</strong></div>`).join('');
+}
+function cfRenderChart(groups){
+ const el=$('cfChart');if(!el)return;
+ if(!groups?.length){el.innerHTML='<div class="cf-empty">Nessun dato disponibile per questo intervallo.</div>';return}
+ const values=groups.map(g=>Number(g.requests||0)),max=Math.max(...values,1);
+ el.innerHTML=groups.map((g,i)=>{const h=Math.max(2,values[i]/max*100);const d=new Date(g.time);const label=cfPeriod==='24h'?d.toLocaleTimeString('it-IT',{hour:'2-digit'}):d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'});return `<div class="cf-bar-group" title="${label}: ${cfFmt(values[i])} richieste"><div class="cf-bar" style="height:${h}%"><span class="cf-bar-label">${label}</span></div></div>`}).join('');
+}
+async function loadCloudflareAnalytics(){
+ if(!admin)return;
+ if(CF_WORKER_URL.includes('INSERISCI-NOME') || (!/^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)*\.workers\.dev$/i.test(CF_WORKER_URL) && !/^https:\/\/[a-z0-9.-]+\/?$/.test(CF_WORKER_URL))){
+   cfSetStatus('Worker non configurato: inserisci il suo URL in CF_WORKER_URL dentro dev/index.html.','error');return;
+ }
+ const user=auth.currentUser;if(!user){cfSetStatus('Sessione Firebase non disponibile.','error');return}
+ cfSetStatus('Caricamento statistiche Cloudflare…');
+ try{
+   const idToken=await getIdToken(user,true);
+   const response=await fetch(CF_WORKER_URL.replace(/\/$/,'')+'/analytics?period='+encodeURIComponent(cfPeriod),{headers:{Authorization:'Bearer '+idToken}});
+   const data=await response.json().catch(()=>({error:'Risposta non valida dal Worker'}));
+   if(!response.ok)throw new Error(data.error||('HTTP '+response.status));
+   $('cfUniques').textContent=cfFmt(data.totals?.uniques);
+   $('cfRequests').textContent=cfFmt(data.totals?.requests);
+   $('cfBandwidth').textContent=cfBytes(data.totals?.bytes);
+   $('cfThreats').textContent=cfFmt(data.totals?.threats);
+   cfRenderChart(data.series||[]);
+   cfRenderList('cfCountries',data.countries||[],'country','requests');
+   cfRenderList('cfStatuses',data.statuses||[],'status','requests');
+   $('cfChartCaption').textContent=cfPeriod==='24h'?'Richieste per ora': 'Richieste per giorno';
+   cfSetStatus('Dati aggiornati · '+new Date().toLocaleString('it-IT'),'ok');
+ }catch(err){console.error('[Cloudflare Analytics]',err);cfSetStatus('Impossibile caricare le statistiche: '+(err.message||'errore sconosciuto'),'error')}
+}
+document.querySelectorAll('[data-cf-period]').forEach(b=>b.addEventListener('click',()=>{
+ cfPeriod=b.dataset.cfPeriod;document.querySelectorAll('[data-cf-period]').forEach(x=>x.classList.toggle('active',x===b));loadCloudflareAnalytics();
+}));
+$('cfRefresh')?.addEventListener('click',loadCloudflareAnalytics);
+
+function count(o){return Object.keys(o||{}).length}
+function statusBan(b){return !!(b&&(b.until==='indefinite'||(b.until&&new Date(b.until)>new Date())))}
+function safe(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function updateStats(){$('statUsers').textContent=count(users);$('statPosts').textContent=count(posts);$('statBans').textContent=Object.values(bans).filter(statusBan).length;$('statNotifs').textContent=count(notifs);$('dbUsers').textContent=count(users);$('dbPosts').textContent=count(posts);$('dbBans').textContent=count(bans);$('dbNotifs').textContent=count(notifs)}
+async function read(path){
+ try{const s=await get(ref(db,path));return s.exists()?s.val():{}}
+ catch(e){console.error('[Firebase READ] /'+path,e.code||'',e.message||e);throw Object.assign(new Error('Lettura negata su /'+path+': '+(e.message||'Permission denied')),{cause:e,path});}
+}
+async function loadAll(){
+ if(!admin)return;
+ try{
+   // bans non concede la lettura del nodo radice: leggiamo ogni bans/{uid}.
+   [users,posts,notifs]=await Promise.all([read('users'),read('sightings'),read('notifications/global')]);
+   bans={}; privateProfiles={};
+   await Promise.all(Object.keys(users).map(async uid=>{
+     const results=await Promise.allSettled([read('bans/'+uid),read('private/'+uid)]);
+     if(results[0].status==='fulfilled' && results[0].value && Object.keys(results[0].value).length) bans[uid]=results[0].value;
+     else if(results[0].status==='rejected') console.warn('[Firebase READ] /bans/'+uid,results[0].reason);
+     if(results[1].status==='fulfilled') privateProfiles[uid]=results[1].value;
+     else {privateProfiles[uid]={};console.warn('[Firebase READ] /private/'+uid,results[1].reason);}
+   }));
+   updateStats();renderUsers();renderPosts();
+   $('dbLog').textContent='Lettura completata: users, sightings, notifiche globali; ban ed email caricati secondo i permessi. '+new Date().toLocaleString('it-IT');
+ }catch(e){
+   console.error('[ADMIN DATA LOAD]',e.path||'',e.cause||e);
+   $('dbLog').textContent='Errore di lettura su '+(e.path||'database')+': '+e.message;
+   notice('Firebase ha negato la lettura di '+(e.path||'un percorso')+'. Controlla Console (F12).','error');
+ }
+}
+function renderUsers(){
+ const term=$('userSearch').value.trim().toLowerCase();
+ const rows=Object.entries(users).filter(([uid,u])=>(u?.username||'').toLowerCase().includes(term)||uid.toLowerCase().includes(term));
+ $('usersTable').innerHTML=rows.length?rows.map(([uid,u])=>{
+   const banned=statusBan(bans[uid]),email=privateProfiles[uid]?.email||'Email non disponibile: regole Firebase';
+   return `<tr><td class="user-cell">${safe(u.username||'Utente senza username')}</td><td class="muted">${safe(email)}</td><td class="muted">${safe(uid.slice(0,12))}…</td><td><span class="status ${banned?'banned':''}">${banned?'BANNATO':'ATTIVO'}</span></td><td>${banned?`<button class="btn secondary" data-unban="${safe(uid)}">Sblocca</button>`:`<button class="btn danger" data-ban="${safe(uid)}">Banna</button>`}</td></tr>`;
+ }).join(''):'<tr><td colspan="5" class="empty">Nessun utente trovato.</td></tr>';
+}
+function renderPosts(){
+ const term=$('postFilter').value.trim().toLowerCase();
+ const rows=Object.entries(posts).filter(([id,p])=>(p?.author||'').toLowerCase().includes(term)||(p?.userId||p?.uid||'').toLowerCase().includes(term));
+ $('postsGrid').innerHTML=rows.length?rows.map(([id,p])=>{
+   const src=p.imageUrl||p.photo||'';
+   return `<article class="post-card">${src?`<img src="${safe(src)}" alt="Immagine post" loading="lazy" onerror="this.style.display='none'">`:''}<strong>${safe(p.catName||p.author||'Avvistamento')}</strong><p>${safe(p.description||'Nessuna descrizione')}</p><small>${safe(p.author||'Autore non disponibile')} · ${safe(p.date||new Date(p.createdAt||0).toLocaleDateString('it-IT'))}</small><div style="margin-top:10px;font-size:10px;color:#56616b">UID: ${safe((p.userId||p.uid||'non disponibile').slice(0,18))}</div></article>`;
+ }).join(''):'<div class="empty">Nessun post trovato.</div>';
+}
+$('userSearch').addEventListener('input',renderUsers);$('postFilter').addEventListener('input',renderPosts);
+$('refreshUsers').addEventListener('click',loadAll);$('refreshPosts').addEventListener('click',loadAll);$('refreshAll').addEventListener('click',loadAll);
+$('usersTable').addEventListener('click',async e=>{
+ const ban=e.target.closest('[data-ban]')?.dataset.ban,unban=e.target.closest('[data-unban]')?.dataset.unban;
+ if(!admin)return;
+ try{
+   if(ban){const reason=prompt('Motivo del ban:','Violazione delle regole della community');if(reason===null)return;await set(ref(db,'bans/'+ban),{until:'indefinite',reason:reason.slice(0,200)})}
+   if(unban){if(!confirm('Confermi lo sblocco di questo account?'))return;await remove(ref(db,'bans/'+unban))}
+   await loadAll();
+ }catch(err){alert('Operazione non riuscita: '+err.message)}
+});
+$('notifTarget').addEventListener('change',()=>$('targetUserWrap').classList.toggle('hidden',$('notifTarget').value!=='user'));
+$('sendNotif').addEventListener('click',async()=>{
+ if(!admin)return alert('Permessi amministrativi non verificati.');
+ const title=$('notifTitle').value.trim(),body=$('notifBody').value.trim(),target=$('notifTarget').value,uid=$('targetUid').value.trim(),url=$('notifUrl').value.trim();
+ if(!title||!body)return alert('Inserisci titolo e messaggio.');
+ if(target==='user'&&!uid)return alert('Inserisci l’UID del destinatario.');
+ const payload={title,body,message:body,timestamp:Date.now(),url:url||'./pages/garden/garden.html',source:'admin'};
+ try{await push(ref(db,target==='global'?'notifications/global':'notifications/'+uid),payload);alert('Notifica inviata su Firebase.');$('notifTitle').value='';$('notifBody').value='';$('notifUrl').value='';await loadAll()}
+ catch(e){alert('Invio non riuscito: '+e.message)}
+});
+onAuthStateChanged(auth,async fbUser=>{
+ admin=false;
+ if(!fbUser){
+   $('connectionState').textContent='Accesso Firebase richiesto';
+   $('dbLog').textContent='Accedi con il tuo account Firebase amministratore. La sessione SSO del portale, da sola, non basta.';
+   showAuth();
+   return;
+ }
+ try{
+   const adminSnap=await get(ref(db,'admins/'+fbUser.uid));
+   admin=adminSnap.val()===true;
+   if(!admin){
+     $('connectionState').textContent='Non autorizzato';
+     $('dbLog').textContent='UID Firebase autenticato ma non autorizzato: '+fbUser.uid;
+     await signOut(auth);
+     showAuth('Questo account Firebase non risulta amministratore. Controlla admins/{uid} e riprova.');
+     return;
+   }
+   hideAuth();
+   $('connectionState').textContent='Connesso · Admin verificato';
+   $('devName').textContent=fbUser.displayName||'MeowGo Admin';
+   $('devEmail').textContent=fbUser.email||fbUser.uid;
+   if(fbUser.photoURL)$('avatar').src=fbUser.photoURL;
+   const sso=localStorage.getItem('meowgo_sso_user');
+   if(sso){try{const u=JSON.parse(sso);if(u.name)$('devName').textContent=u.name;if(u.avatar)$('avatar').src=u.avatar}catch(e){}}
+   notice('Connessione Firebase attiva. Autorizzazione amministratore verificata.','ok');
+   await loadAll();
+   loadCloudflareAnalytics();
+ }catch(e){
+   $('connectionState').textContent='Errore permessi';
+   console.error('[ADMIN AUTH CHECK] Impossibile leggere admins/'+fbUser.uid,e);
+    showAuth('Impossibile verificare admins/{uid}: '+e.message+' (controlla che l’UID autenticato coincida con la chiave in /admins e che le regole siano pubblicate).');
+   notice('Verifica amministratore non riuscita: '+e.message,'error');
+ }
+});
+</script>
+</body></html>
