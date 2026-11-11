@@ -1,0 +1,8 @@
+name = "meowgo-analytics-api"
+main = "src/index.js"
+compatibility_date = "2026-11-11"
+
+[vars]
+CF_ZONE_ID = "686bf022139ec88acdb533b6c64bc617"
+FIREBASE_DATABASE_URL = "https://ogwoem-default-rtdb.europe-west1.firebasedatabase.app"
+ALLOWED_ORIGIN = "https://dev.meowgo.it"

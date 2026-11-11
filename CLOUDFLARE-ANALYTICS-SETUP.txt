@@ -1,0 +1,3 @@
+Il pannello Admin è collegato a https://meowgo-analytics-api.antoscugnizzu.workers.dev.
+Il Worker verifica gli amministratori dinamicamente tramite Firebase /admins/{uid}; non richiede ADMIN_UID.
+Verifica che CF_API_TOKEN sia configurato come Secret nel Worker. Consulta cloudflare-worker/README.md per deploy e controlli.
