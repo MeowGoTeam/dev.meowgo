@@ -147,7 +147,9 @@ export default {
     }
     try {
       await verifyFirebaseAdmin(request, env);
-      const period = url.searchParams.get("period") || "24h";
+      const period = url.searchParams.get("range")
+  || url.searchParams.get("period")
+  || "24h";
       if (!["24h", "7d", "30d"].includes(period)) {
         return json({ error: "Intervallo non valido." }, 400, allowedOrigin);
       }
