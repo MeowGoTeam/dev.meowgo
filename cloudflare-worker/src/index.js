@@ -1,165 +1,525 @@
-import { createRemoteJWKSet, jwtVerify } from "jose";
 
 const FIREBASE_PROJECT_ID = "ogwoem";
-const FIREBASE_JWKS = createRemoteJWKSet(
-  new URL("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com")
-);
+const FIREBASE_DATABASE_URL =
+  "https://ogwoem-default-rtdb.europe-west1.firebasedatabase.app";
 
-const json = (data, status = 200, origin = "") => new Response(JSON.stringify(data), {
-  status,
-  headers: {
-    "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store",
-    "Access-Control-Allow-Origin": origin,
-    "Vary": "Origin"
+const CLOUDFLARE_GRAPHQL_URL =
+  "https://api.cloudflare.com/client/v4/graphql";
+
+const FIREBASE_JWKS_URL =
+  "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
+
+const ALLOWED_METHODS = "GET, OPTIONS";
+const ALLOWED_HEADERS = "Authorization, Content-Type";
+
+let cachedJwks = null;
+let jwksExpiresAt = 0;
+
+function json(data, status = 200, origin = "") {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Methods": ALLOWED_METHODS,
+      "Access-Control-Allow-Headers": ALLOWED_HEADERS,
+      "Vary": "Origin"
+    }
+  });
+}
+
+function getCorsOrigin(request, env) {
+  const origin = request.headers.get("Origin") || "";
+  const allowed = env.ALLOWED_ORIGIN;
+
+  if (!allowed) return null;
+
+  return origin === allowed ? origin : null;
+}
+
+function base64UrlToBytes(value) {
+  const base64 = value
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
+  const padded = base64 + "=".repeat((4 - base64.length % 4) % 4);
+  const binary = atob(padded);
+
+  return Uint8Array.from(binary, c => c.charCodeAt(0));
+}
+
+function decodeJwtPart(value) {
+  const bytes = base64UrlToBytes(value);
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+async function getFirebaseJwks() {
+  if (cachedJwks && Date.now() < jwksExpiresAt) {
+    return cachedJwks;
   }
-});
 
-function corsHeaders(origin) {
+  const response = await fetch(FIREBASE_JWKS_URL);
+
+  if (!response.ok) {
+    throw new Error("Impossibile recuperare le chiavi Firebase.");
+  }
+
+  const data = await response.json();
+
+  if (!Array.isArray(data.keys) || data.keys.length === 0) {
+    throw new Error("Chiavi pubbliche Firebase non valide.");
+  }
+
+  cachedJwks = data.keys;
+  jwksExpiresAt = Date.now() + 60 * 60 * 1000;
+
+  return cachedJwks;
+}
+
+async function verifyFirebaseToken(token) {
+  if (!token || typeof token !== "string") {
+    throw new Error("Token Firebase mancante.");
+  }
+
+  const parts = token.split(".");
+
+  if (parts.length !== 3) {
+    throw new Error("Token Firebase non valido.");
+  }
+
+  let header;
+  let payload;
+
+  try {
+    header = decodeJwtPart(parts[0]);
+    payload = decodeJwtPart(parts[1]);
+  } catch {
+    throw new Error("Token Firebase malformato.");
+  }
+
+  if (header.alg !== "RS256" || !header.kid) {
+    throw new Error("Algoritmo del token non supportato.");
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+
+  if (payload.aud !== FIREBASE_PROJECT_ID) {
+    throw new Error("Token appartenente a un progetto Firebase diverso.");
+  }
+
+  if (payload.iss !==
+      `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`) {
+    throw new Error("Emittente del token Firebase non valido.");
+  }
+
+  if (!payload.sub || typeof payload.sub !== "string") {
+    throw new Error("UID Firebase mancante.");
+  }
+
+  if (payload.sub.length > 128) {
+    throw new Error("UID Firebase non valido.");
+  }
+
+  if (!payload.exp || payload.exp <= now) {
+    throw new Error("Sessione Firebase scaduta.");
+  }
+
+  if (!payload.iat || payload.iat > now + 60) {
+    throw new Error("Data di emissione del token non valida.");
+  }
+
+  if (payload.auth_time && payload.auth_time > now + 60) {
+    throw new Error("Autenticazione Firebase non valida.");
+  }
+
+  const keys = await getFirebaseJwks();
+  const jwk = keys.find(key => key.kid === header.kid);
+
+  if (!jwk) {
+    cachedJwks = null;
+    jwksExpiresAt = 0;
+
+    throw new Error("Chiave di firma Firebase non trovata.");
+  }
+
+  const publicKey = await crypto.subtle.importKey(
+    "jwk",
+    jwk,
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      hash: "SHA-256"
+    },
+    false,
+    ["verify"]
+  );
+
+  const signature = base64UrlToBytes(parts[2]);
+  const signedData = new TextEncoder().encode(
+    `${parts[0]}.${parts[1]}`
+  );
+
+  const valid = await crypto.subtle.verify(
+    "RSASSA-PKCS1-v1_5",
+    publicKey,
+    signature,
+    signedData
+  );
+
+  if (!valid) {
+    throw new Error("Firma del token Firebase non valida.");
+  }
+
+  return payload;
+}
+
+async function verifyAdmin(uid, token) {
+  const url =
+    `${FIREBASE_DATABASE_URL}/admins/${encodeURIComponent(uid)}.json` +
+    `?auth=${encodeURIComponent(token)}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Accept": "application/json"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      "Impossibile verificare i permessi amministratore su Firebase."
+    );
+  }
+
+  const isAdmin = await response.json();
+
+  if (isAdmin !== true) {
+    throw new Error("Accesso negato: utente non amministratore.");
+  }
+
+  return true;
+}
+
+function getPeriodRange(period) {
+  const now = new Date();
+
+  const ranges = {
+    "24h": 1,
+    "7d": 7,
+    "30d": 30
+  };
+
+  const days = ranges[period];
+
+  if (!days) {
+    throw new Error("Intervallo temporale non valido.");
+  }
+
+  const from = new Date(
+    now.getTime() - days * 24 * 60 * 60 * 1000
+  );
+
   return {
-    "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Authorization, Content-Type",
-    "Access-Control-Max-Age": "86400",
-    "Vary": "Origin"
+    from: from.toISOString(),
+    to: now.toISOString(),
+    days
   };
 }
 
-async function verifyFirebaseAdmin(request, env) {
-  const header = request.headers.get("Authorization") || "";
-  if (!header.startsWith("Bearer ")) throw new Error("Autenticazione richiesta.");
-  const token = header.slice(7);
-  const { payload } = await jwtVerify(token, FIREBASE_JWKS, {
-    issuer: `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`,
-    audience: FIREBASE_PROJECT_ID,
-    algorithms: ["RS256"]
-  });
+async function fetchCloudflareAnalytics(env, range) {
+  if (!env.CF_API_TOKEN) {
+    throw new Error("Secret CF_API_TOKEN non configurato.");
+  }
 
-  const uid = payload.sub;
-  if (!uid) throw new Error("Token Firebase non valido.");
+  if (!env.CF_ZONE_ID) {
+    throw new Error("Variabile CF_ZONE_ID non configurata.");
+  }
 
-  // Controllo dinamico: qualsiasi UID con /admins/{uid} === true è amministratore.
-  // Non è necessario mantenere un singolo ADMIN_UID nelle variabili del Worker.
-  const databaseUrl = (env.FIREBASE_DATABASE_URL ||
-    "https://ogwoem-default-rtdb.europe-west1.firebasedatabase.app").replace(/\/$/, "");
-  const adminUrl = `${databaseUrl}/admins/${encodeURIComponent(uid)}.json?auth=${encodeURIComponent(token)}`;
-  const adminResponse = await fetch(adminUrl, { headers: { "Cache-Control": "no-store" } });
-  if (!adminResponse.ok) throw new Error("Impossibile verificare i permessi amministratore su Firebase.");
-  const isAdmin = await adminResponse.json();
-  if (isAdmin !== true) throw new Error("Utente autenticato ma non autorizzato.");
-  return uid;
-}
+  const { from, to, days } = getPeriodRange(range);
 
-const dateISO = d => d.toISOString().slice(0, 10);
-const gql = `query ZoneAnalytics($zone: String!, $from: Date!, $to: Date!) {
-  viewer {
-    zones(filter: { zoneTag: $zone }) {
-      httpRequests1hGroups(limit: 1000, filter: { date_geq: $from, date_leq: $to }, orderBy: [datetimeHour_ASC]) {
-        dimensions { datetimeHour }
-        sum {
-          requests
-          bytes
-          threats
-          countryMap { clientCountryName requests }
-          responseStatusMap { edgeResponseStatus requests }
+  const query = `
+    query ZoneAnalytics(
+      $zoneTag: string!
+      $start: Time!
+      $end: Time!
+    ) {
+      viewer {
+        zones(filter: { zoneTag: $zoneTag }) {
+          httpRequests1hGroups(
+            limit: 1000
+            filter: {
+              datetime_geq: $start
+              datetime_lt: $end
+            }
+            orderBy: [datetimeHour_ASC]
+          ) {
+            dimensions {
+              datetimeHour
+            }
+            sum {
+              requests
+              bytes
+              threats
+              countryMap {
+                clientCountryName
+                requests
+              }
+              responseStatusMap {
+                edgeResponseStatus
+                requests
+              }
+            }
+            uniq {
+              uniques
+            }
+          }
         }
-        uniq { uniques }
       }
     }
-  }
-}`;
+  `;
 
-async function fetchAnalytics(env, period) {
-  const now = new Date();
-  const days = period === "24h" ? 1 : period === "7d" ? 7 : 30;
-  const from = new Date(now.getTime() - (days - 1) * 86400000);
-  const variables = { zone: env.CF_ZONE_ID, from: dateISO(from), to: dateISO(now) };
-  const resp = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+  const response = await fetch(CLOUDFLARE_GRAPHQL_URL, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${env.CF_API_TOKEN}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "Accept": "application/json"
     },
-    body: JSON.stringify({ query: gql, variables })
+    body: JSON.stringify({
+      query,
+      variables: {
+        zoneTag: env.CF_ZONE_ID,
+        start: from,
+        end: to
+      }
+    })
   });
-  const body = await resp.json();
-  if (!resp.ok || body.errors?.length) {
-    throw new Error(body.errors?.map(e => e.message).join("; ") || `Cloudflare API HTTP ${resp.status}`);
+
+  const result = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      `Cloudflare API HTTP ${response.status}.`
+    );
   }
-  let rows = body.data?.viewer?.zones?.[0]?.httpRequests1hGroups || [];
-  if (period === "24h") {
-    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-    rows = rows.filter(row => {
-      const stamp = Date.parse(row.dimensions?.datetimeHour || "");
-      return Number.isFinite(stamp) && stamp >= cutoff && stamp <= Date.now();
-    });
+
+  if (!result) {
+    throw new Error("Risposta Cloudflare non valida.");
   }
-  const totals = { requests: 0, bytes: 0, threats: 0, uniques: 0 };
-  const countries = new Map();
-  const statuses = new Map();
-  const series = rows.map(row => {
-    const sum = row.sum || {};
-    totals.requests += Number(sum.requests || 0);
-    totals.bytes += Number(sum.bytes || 0);
-    totals.threats += Number(sum.threats || 0);
-    totals.uniques += Number(row.uniq?.uniques || 0);
-    for (const item of sum.countryMap || []) {
-      const key = item.clientCountryName || "Sconosciuto";
-      countries.set(key, (countries.get(key) || 0) + Number(item.requests || 0));
+
+  if (result.errors?.length) {
+    const messages = result.errors
+      .map(error => error.message)
+      .filter(Boolean);
+
+    throw new Error(
+      "Errore GraphQL: " + messages.join(" | ")
+    );
+  }
+
+  const zones = result.data?.viewer?.zones;
+
+  if (!Array.isArray(zones) || zones.length === 0) {
+    throw new Error(
+      "Zona Cloudflare non trovata o non accessibile."
+    );
+  }
+
+  const groups = zones[0].httpRequests1hGroups;
+
+  if (!Array.isArray(groups)) {
+    throw new Error("Dati Analytics non disponibili.");
+  }
+
+  const totals = {
+    requests: 0,
+    bytes: 0,
+    threats: 0,
+    uniques: 0
+  };
+
+  const countriesMap = new Map();
+  const statusesMap = new Map();
+
+  const series = groups.map(group => {
+    const sum = group.sum || {};
+
+    const requests = Number(sum.requests || 0);
+    const bytes = Number(sum.bytes || 0);
+    const threats = Number(sum.threats || 0);
+    const uniques = Number(group.uniq?.uniques || 0);
+
+    totals.requests += requests;
+    totals.bytes += bytes;
+    totals.threats += threats;
+
+    // È la somma degli unici per ora, non un conteggio
+    // deduplicato sull'intero intervallo.
+    totals.uniques += uniques;
+
+    for (const country of sum.countryMap || []) {
+      const name = country.clientCountryName || "Sconosciuto";
+
+      countriesMap.set(
+        name,
+        (countriesMap.get(name) || 0) +
+          Number(country.requests || 0)
+      );
     }
-    for (const item of sum.responseStatusMap || []) {
-      const key = String(item.edgeResponseStatus ?? "N/D");
-      statuses.set(key, (statuses.get(key) || 0) + Number(item.requests || 0));
+
+    for (const status of sum.responseStatusMap || []) {
+      const code = String(
+        status.edgeResponseStatus ?? "Sconosciuto"
+      );
+
+      statusesMap.set(
+        code,
+        (statusesMap.get(code) || 0) +
+          Number(status.requests || 0)
+      );
     }
+
     return {
-      time: row.dimensions?.datetimeHour || "",
-      requests: Number(sum.requests || 0)
+      time: group.dimensions?.datetimeHour || null,
+      requests
     };
   });
+
+  const countries = Array.from(countriesMap.entries())
+    .map(([country, requests]) => ({
+      country,
+      requests
+    }))
+    .sort((a, b) => b.requests - a.requests)
+    .slice(0, 10);
+
+  const statuses = Array.from(statusesMap.entries())
+    .map(([status, requests]) => ({
+      status,
+      requests
+    }))
+    .sort((a, b) => b.requests - a.requests)
+    .slice(0, 10);
+
   return {
-    period,
-    from: variables.from,
-    to: variables.to,
+    range,
+    generatedAt: new Date().toISOString(),
     totals,
     series,
-    countries: [...countries].map(([country, requests]) => ({ country, requests })).sort((a,b) => b.requests-a.requests).slice(0, 8),
-    statuses: [...statuses].map(([status, requests]) => ({ status, requests })).sort((a,b) => b.requests-a.requests).slice(0, 8)
+    countries,
+    statuses
   };
 }
 
 export default {
   async fetch(request, env) {
-    const origin = request.headers.get("Origin") || "";
-    const allowedOrigin = env.ALLOWED_ORIGIN || "https://dev.meowgo.it";
-    if (origin && origin !== allowedOrigin) return new Response("Origin non consentita", { status: 403 });
-    if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: corsHeaders(allowedOrigin) });
-    }
     const url = new URL(request.url);
-    if (url.pathname === "/health" && request.method === "GET") {
-      return json({ status: "online", service: "MeowGo Analytics API" }, 200, allowedOrigin);
-    }
-    if (request.method !== "GET" || url.pathname !== "/analytics") {
-      return json({ error: "Endpoint non trovato." }, 404, allowedOrigin);
-    }
-    if (!env.CF_API_TOKEN || !env.CF_ZONE_ID) {
-      return json({ error: "Configurazione Worker incompleta: verifica CF_API_TOKEN e CF_ZONE_ID." }, 503, allowedOrigin);
-    }
-    try {
-      await verifyFirebaseAdmin(request, env);
-      const period = url.searchParams.get("range")
-  || url.searchParams.get("period")
-  || "24h";
-      if (!["24h", "7d", "30d"].includes(period)) {
-        return json({ error: "Intervallo non valido." }, 400, allowedOrigin);
+    const origin = getCorsOrigin(request, env);
+
+    if (request.method === "OPTIONS") {
+      if (!origin) {
+        return json(
+          { error: "Origin non autorizzata." },
+          403,
+          ""
+        );
       }
-      const data = await fetchAnalytics(env, period);
-      return json(data, 200, allowedOrigin);
+
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": origin,
+          "Access-Control-Allow-Methods": ALLOWED_METHODS,
+          "Access-Control-Allow-Headers": ALLOWED_HEADERS,
+          "Access-Control-Max-Age": "86400",
+          "Vary": "Origin"
+        }
+      });
+    }
+
+    if (url.pathname === "/health") {
+      return json({
+        status: "online",
+        service: "MeowGo Analytics API"
+      }, 200, origin || "");
+    }
+
+    if (!origin) {
+      return json(
+        { error: "Origin non autorizzata." },
+        403,
+        ""
+      );
+    }
+
+    if (request.method !== "GET") {
+      return json(
+        { error: "Metodo non consentito." },
+        405,
+        origin
+      );
+    }
+
+    if (url.pathname !== "/analytics") {
+      return json(
+        { error: "Endpoint non trovato." },
+        404,
+        origin
+      );
+    }
+
+    try {
+      const authorization =
+        request.headers.get("Authorization") || "";
+
+      if (!authorization.startsWith("Bearer ")) {
+        return json(
+          { error: "Autenticazione richiesta." },
+          401,
+          origin
+        );
+      }
+
+      const token = authorization.slice(7).trim();
+
+      if (!token) {
+        return json(
+          { error: "Token Firebase mancante." },
+          401,
+          origin
+        );
+      }
+
+      const user = await verifyFirebaseToken(token);
+
+      await verifyAdmin(user.sub, token);
+
+      const range =
+        url.searchParams.get("range") ||
+        url.searchParams.get("period") ||
+        "24h";
+
+      const analytics = await fetchCloudflareAnalytics(
+        env,
+        range
+      );
+
+      return json(analytics, 200, origin);
+
     } catch (error) {
-      const message = error.message || "Errore interno.";
-      const status = message.includes("Autenticazione") || message.includes("Token Firebase") ? 401 :
-        message.includes("non autorizzato") ? 403 : 502;
-      return json({ error: message }, status, allowedOrigin);
+      console.error(
+        "[MeowGo Analytics]",
+        error?.stack || error?.message || error
+      );
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Errore interno del server.";
+
+      return json({
+        error: message
+      }, 500, origin);
     }
   }
 };
